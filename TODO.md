@@ -75,29 +75,40 @@ Companion to [REQUIREMENTS.md](REQUIREMENTS.md).
       GNU Radio blocks.
 
       Then ran the actual sweep (24 trials/point, mic port, 30-char
-      message, matching the documented methodology exactly):
+      message, matching the documented methodology exactly), and - since
+      the result didn't match open_wave's own docstring summary - ran
+      open_wave's own `audio_margin_sweep.py` live on this machine with
+      the identical arguments as a second, independent check: it
+      produced numerically identical output to `margin_sweep.py`, SNR
+      values and delivered-counts matching at every single sigma. So the
+      gap below isn't translation drift in `_phy.py`'s wrapping - it's
+      that open_wave's own docstring summary doesn't match what its own
+      script actually outputs today, on this machine, with its own
+      documented default invocation (environment/numpy drift since
+      "measured 2026-10-04", or the one-line summary was always a loose
+      rounding - not determined, and out of this module's scope to dig
+      into further).
 
-      | Mode | FEC | open_wave's documented cliff | This run's measured cliff |
+      Followed up with a tightened sweep (100 trials, finer sigma steps
+      bracketing each cliff, 50% point by linear interpolation between
+      the two bracketing sigmas):
+
+      | Mode | FEC | open_wave's docstring | Measured here (both scripts agree) |
       |---|---|---|---|
       | 0 (BPSK 600) | r1_4_k9 | -1 dB | -1 to -2 dB (100%→88%→67% over -0.6→-2.7dB) - close match |
-      | 1 (BPSK 1200) | r1_2_k3 | 4.5 dB | ~2-4 dB (100% at 3.9dB, 62% at 2.3dB, 12% at 0.7dB) |
-      | 2 (QPSK 1200) | r1_2_k3 | 7 dB | ~4-6 dB (96% at 5.9dB, 29% at 4.4dB, 0% at 3.0dB) |
+      | 1 (BPSK 1200) | r1_2_k3 | 4.5 dB | **~1.75 dB** (58% at 2.0dB, 39% at 1.4dB) |
+      | 2 (QPSK 1200) | r1_2_k3 | 7 dB | **~5.0 dB** (55% at 5.1dB, 31% at 4.5dB) |
 
-      Mode 0 matches closely; modes 1/2 land 2-3 dB more pessimistic than
-      the documented figures, but in the same ballpark and with the same
-      ordering (mode 0 most noise-tolerant, then 1, then 2 - QPSK needing
-      more SNR than BPSK, as expected). Given the bit-identical drift
-      check above, this gap is attributed to ordinary run-to-run
-      Monte Carlo variance (24 trials at a handful of discrete noise
-      steps, same code, different random draws) rather than a bug -
-      `open_wave`'s own one-line docstring summary ("breaks near X dB")
-      is itself a rounded takeaway from one specific run, not a
-      guaranteed constant. Re-run with `--trials 100`+ and finer
-      `--sigmas` steps near each reported cliff if a tighter match is
-      ever needed. Also confirmed, across every mode/sigma tested:
-      `open_modem_rx`'s default quality `threshold` (0.4) never rejected
-      a burst `decode_frames` could still recover, and never accepted
-      one it couldn't - the block's default isn't costing anything here.
+      Mode 0 still matches closely; modes 1/2's 50% points are real,
+      reproducible numbers on this machine (confirmed via the live
+      cross-check above, and stable between the 24- and 100-trial runs -
+      not noise averaging out as more trials were added, which is what
+      ruled out "just needs more trials" as the explanation). Relative
+      ordering still holds (mode 0 most noise-tolerant, then 1, then 2).
+      Also confirmed, across every mode/sigma tested: `open_modem_rx`'s
+      default quality `threshold` (0.4) never rejected a burst
+      `decode_frames` could still recover, and never accepted one it
+      couldn't - the block's default isn't costing anything here.
 - [x] **Phase 2b — fragmentation and ACK/retry.** `_phy.py` gained
       `modulate_frame` (factored out of `build_burst`),
       `build_fragmented_bursts` (wraps `openwave_link.build_fragmented_frames`,

@@ -89,10 +89,15 @@ Companion to [REQUIREMENTS.md](REQUIREMENTS.md).
       matching the live reading (sigma 0.9 -> ~4.5 dB mean, individual
       bursts scattering above/below that, including readings over 5 dB)
       and shifting mode 2's real cliff for these flowgraphs to roughly
-      `sigma` 1.0-1.1, not 0.7-0.9. Any `--level`-less `margin_sweep.py`
-      comparison against a flowgraph must match that flowgraph's own
-      `tx_level`, or the numbers aren't comparable - the two aren't
-      interchangeable just because both are "noise standard deviation
+      `sigma` 1.0-1.1, not 0.7-0.9. **Confirmed against further live
+      observation** (user, same session): good demods at `sigma 0.7`,
+      cliff around `sigma 1.0` - matches the table's 82.5%-at-0.9 ->
+      12.5%-at-1.1 transition exactly, so this one's cross-validated
+      against the actual GUI, not just computed offline. Any
+      `--level`-less `margin_sweep.py` comparison against a flowgraph
+      must match that flowgraph's own `tx_level`, or the numbers aren't
+      comparable - the two aren't interchangeable just because both are
+      "noise standard deviation
       against a burst."
 - [x] **Fixed two real bugs in `open_modem_constellation.grc`, found
       interactively** (user: "symbols stopped plotting... lowering sigma

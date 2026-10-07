@@ -114,12 +114,36 @@ channel in between (a real GRC block chain - `analog.noise_source_f` +
 `blocks.add_ff`, not the stock complex-only `channels_channel_model`):
 
 ```
-python3 open_modem_noisy_loopback.py --noise-sigma 0.1   # mild - clean decodes
-python3 open_modem_noisy_loopback.py --noise-sigma 1.5   # heavy - crc_fail, retries, eventual delivery_failed
+python3 open_modem_noisy_loopback.py --mode-id 1 --noise-sigma 0.1   # mild - clean decodes
+python3 open_modem_noisy_loopback.py --mode-id 1 --noise-sigma 1.5   # heavy - crc_fail, retries, eventual delivery_failed
 ```
 
 the live, GNU-Radio-native counterpart to `apps/margin_sweep.py`'s offline
 noise sweep - see `examples/README.md` for what to expect at each level.
+**The right `--noise-sigma` to pick depends on the mode** (`--mode-id`,
+0-5) and `tx_level` (0.7 by default here) - there's no one "mild"/"heavy"
+pair that holds across modes; see `TODO.md`'s margin-sweep entries for
+mode-specific measured cliffs, or run `apps/margin_sweep.py --level 0.7`
+for the mode you're testing to find it directly.
+
+`open_modem_constellation.grc` is the same noisy loop again, but as a
+`qt_gui` flowgraph (needs a display) with a live noise slider instead of
+a CLI flag, and the actual demodulated symbols plotted on a QT GUI
+Constellation Sink:
+
+```
+cd examples
+GRC_BLOCKS_PATH="$HOME/.local/share/gnuradio/grc/blocks" grcc open_modem_constellation.grc
+python3 open_modem_constellation.py --mode-id 1
+```
+
+(`--mode-id`/`-m` is still a CLI flag, since it's the one thing you'd
+only want to set once at startup; drag the "Noise sigma" slider in the
+running window to watch delivery degrade live - tight clusters at the
+mode's ideal constellation points mean a clean decode, a smeared ring or
+blob means you've found that mode's cliff.) Can also be opened directly
+in GNU Radio Companion (`gnuradio-companion`, File -> Open) instead of
+compiling from the command line - see `examples/README.md`.
 
 `open_modem_ht.grc` needs a real AIOC or Digirig attached (it autodetects
 via `radio_select`, failing loudly at startup if it finds none or more than

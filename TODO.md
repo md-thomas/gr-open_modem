@@ -4,6 +4,21 @@ Companion to [REQUIREMENTS.md](REQUIREMENTS.md).
 
 ## Open
 
+- [ ] **`open_modem_rx` doesn't deduplicate by Sequence Number.** Found
+      running `open_modem_station_sim.grc` for real, two separate
+      processes over a PipeWire loopback: an ACK that arrives just after
+      `open_modem_tx`'s 2s retry timeout causes a real retry, which the
+      peer's `open_modem_rx` decodes and delivers to `pdu_out` a second
+      time as an apparently-new message, rather than recognizing the
+      duplicate seq and (at most) re-sending the ACK without re-delivering
+      to the application. The archived `legacy/gnuradio/phy_sim_loopback.grc`'s
+      embedded `stream_display_sink_0` block had exactly this tracking
+      (`_update_seq`, counting dup/lost); `open_modem_rx._dispatch` never
+      got an equivalent. Not introduced by today's work - this gap exists
+      in every flowgraph using `open_modem_rx` with `ack_requested`, it
+      was just never exercised with real enough round-trip latency to
+      trigger a retry before now.
+
 - [ ] **Back-to-back fragment bursts can confuse the receive-side burst
       detector.** Discovered while testing Phase 2b's fragmentation:
       `_phy.decode_burst`/`openwave_audio.demodulate`'s marker search finds
@@ -63,6 +78,44 @@ Companion to [REQUIREMENTS.md](REQUIREMENTS.md).
 
 ## Done (most recent first)
 
+- [x] **Added a simulation path with no hardware and no kernel modules** -
+      `examples/open_modem_station_sim.grc`, one simulated station (run
+      twice, two separate processes, to talk to itself-as-two-stations) -
+      alongside the existing RF path (`open_modem_ht.grc`). Needed, and
+      built, two new pieces:
+      - **`pdu_to_text`**, a new block answering "does GNU Radio have a
+        message-viewing GUI widget" properly: `open_modem_rx`'s `pdu_out`
+        PDU isn't a plain string, but a `QT GUI Message Edit Box` used as
+        a read-only display (fed via its `val` port, never typed into -
+        the same trick the archived `phy_sim_loopback.grc`'s "Received"
+        box used) needs one. Formats a decoded frame (or a heard-but-
+        undecoded burst) into one human-readable line.
+      - **A root-free, no-kernel-module simulated audio link between two
+        separate OS processes.** The obvious option, `snd-aloop`, needs
+        `modprobe` - unavailable in this sandboxed dev environment
+        (confirmed: `modprobe snd-aloop` → "Operation not permitted", no
+        sudo). Found a working alternative already running on this
+        machine: PipeWire's PulseAudio-compatible null-sink + its
+        auto-created `.monitor` source, created entirely in userspace
+        (`pactl load-module module-null-sink sink_name=...`). GNU Radio's
+        `audio.sink`/`audio.source` reach it through ALSA's `pulse`
+        device, targeted per-process via the `PULSE_SINK`/`PULSE_SOURCE`
+        environment variables at launch - no GRC-visible difference at
+        all, both blocks just say `device_name: pulse`.
+      - Each station's own `noise_sigma` slider is a real channel model
+        (`analog.noise_source_f`/`blocks.add_ff`, same as the other
+        noisy examples) applied to *that station's own* outgoing audio,
+        before it ever leaves that process - so the two directions can
+        be independently noisy, matching a real asymmetric link, and
+        confirming (per a user's question) that real noisy audio samples
+        genuinely transit the loopback, not a separate abstract "channel"
+        stage.
+      - **Verified for real**, not just compiled: two separate headless
+        processes (`QT_QPA_PLATFORM=offscreen`), real `pactl` null-sinks,
+        one typed message traveling from station A to station B's
+        Received box: `[K0MDT-1] hello from station A (SNR 17.6 dB)`.
+        Surfaced one real pre-existing gap in the process (`open_modem_rx`
+        has no seq-based deduplication) - see Open section above.
 - [x] **`margin_sweep.py` gained a `--level` flag** (default 0.5, unchanged
       - matches `audio_margin_sweep.py`'s own hardcoded convention),
       after a user's live reading didn't match a cliff table quoted in

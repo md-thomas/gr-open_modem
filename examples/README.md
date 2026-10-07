@@ -32,6 +32,42 @@ user-prefix install), then run the generated `<file>.py`.
   both load-bearing, not cosmetic; see `TODO.md` for the two real bugs
   (a dead-forever block, then a 168-million-samples-in-5-seconds runaway)
   that showed up without them.
+- **`open_modem_station_sim.grc`** — a simulation path alongside the RF
+  path above: one simulated station, with a GUI "Send" box to type into
+  and a read-only "Received" box (via the new `pdu_to_text` block - a
+  QT GUI Message Edit Box fed through its `val` port, the same trick the
+  archived `phy_sim_loopback.grc`'s "Received"/"Link Stats" boxes used)
+  instead of reading console output. **Run it twice** - two separate
+  processes, same machine or different ones, no hardware at all - to
+  simulate a real two-way exchange. Each instance's own "Noise sigma"
+  slider is a real channel model on *its own* outgoing audio (so the two
+  directions can be independently noisy, like a real asymmetric link),
+  and Audio Sink/Source use ALSA's `pulse` device, redirected per-process
+  via `PULSE_SINK`/`PULSE_SOURCE` to a PipeWire/PulseAudio null-sink pair
+  - no root or kernel module needed (confirmed: this doesn't need
+  `snd-aloop`, which this sandboxed dev environment couldn't load at all -
+  `modprobe` requires privileges this environment doesn't have).
+
+  One-time setup (either side can do this, they're machine-wide):
+  ```
+  pactl load-module module-null-sink sink_name=link_a_to_b
+  pactl load-module module-null-sink sink_name=link_b_to_a
+  ```
+  Then, two terminals:
+  ```
+  PULSE_SINK=link_a_to_b PULSE_SOURCE=link_b_to_a.monitor \
+      python3 open_modem_station_sim.py -s K0MDT-1 -d K0MDT-2 -m 1
+  PULSE_SINK=link_b_to_a PULSE_SOURCE=link_a_to_b.monitor \
+      python3 open_modem_station_sim.py -s K0MDT-2 -d K0MDT-1 -m 1
+  ```
+  Verified live (two real processes, headless): station B's Received box
+  showed `[K0MDT-1] hello from station A  (SNR 17.6 dB)` after typing
+  into A's Send box. One real, pre-existing gap this surfaced, not
+  introduced by this flowgraph: `open_modem_rx` doesn't deduplicate by
+  Sequence Number, so an ACK that arrives just after its 2s timeout
+  (plausible here - this loopback path adds its own latency) causes a
+  retry that gets delivered to the GUI a second time, rather than
+  silently re-acking. See `TODO.md`.
 - **`open_modem_ht.grc`** — the live station: a real AIOC/Digirig over USB
   audio, autodetected via `radio_select` (`--radio aioc`/`--radio digirig`
   to name one if more than one is attached). Needs real hardware and a

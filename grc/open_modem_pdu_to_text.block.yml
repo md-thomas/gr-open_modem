@@ -1,0 +1,19 @@
+id: open_modem_pdu_to_text
+label: PDU to Text (for display)
+category: '[open_modem]'
+
+templates:
+  imports: from gnuradio import open_modem
+  make: open_modem.pdu_to_text()
+
+parameters: []
+
+inputs:
+- label: pdu_in
+  domain: message
+
+outputs:
+- label: text
+  domain: message
+
+file_format: 1

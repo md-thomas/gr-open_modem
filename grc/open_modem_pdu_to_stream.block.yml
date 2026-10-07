@@ -1,0 +1,20 @@
+id: open_modem_pdu_to_stream
+label: PDU to Stream (incremental)
+category: '[open_modem]'
+
+templates:
+  imports: from gnuradio import open_modem
+  make: open_modem.pdu_to_stream()
+
+parameters: []
+
+inputs:
+- label: pdus
+  domain: message
+
+outputs:
+- label: out
+  domain: stream
+  dtype: float
+
+file_format: 1

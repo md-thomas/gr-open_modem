@@ -1,0 +1,25 @@
+id: open_modem_ptt_control
+label: PTT Control
+category: '[open_modem]'
+
+templates:
+  imports: from gnuradio import open_modem
+  make: open_modem.ptt_control(${ptt_port}, ${ptt_line})
+
+parameters:
+- id: ptt_port
+  label: PTT serial port
+  dtype: string
+  default: /dev/ttyACM0
+- id: ptt_line
+  label: PTT line ('dtr' for AIOC, 'rts' for Digirig)
+  dtype: string
+  default: dtr
+
+inputs:
+- label: ptt
+  domain: message
+
+outputs: []
+
+file_format: 1

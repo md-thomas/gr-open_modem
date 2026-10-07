@@ -1,0 +1,271 @@
+options:
+  parameters:
+    author: mdthomas
+    catch_exceptions: 'True'
+    category: '[open_modem]'
+    cmake_opt: ''
+    comment: Software-only loopback - no hardware, no GUI. A message strobe
+      drives open_modem_tx periodically with ack_requested set, so each
+      message's ACK closes a real loop within this one flowgraph - RX's
+      ack_needed -> ack_responder -> back through the same pdu_to_stream
+      and (in a live flowgraph) ptt_control -> RX again -> RX's
+      ack_received -> TX's own ack_received, resolving its RetryManager -
+      same closed-loop shape as the archived
+      open_modem/open_wave/legacy/gnuradio/phy_sim_loopback.grc's
+      str_to_pdu_0/ack_responder_0 embedded blocks, just as separate,
+      installable blocks instead. Uses pdu_to_stream rather than the stock
+      PDU to Tagged Stream block because the latter needs an output buffer
+      sized to hold an entire burst in one shot, and this system's buffer
+      allocator silently caps that well under even the shortest mic-port
+      burst - see TODO.md. Single-frame only - this flowgraph deliberately
+      doesn't exercise fragmentation (a known, separate limitation - see
+      TODO.md on back-to-back fragment bursts and the receive buffer).
+    copyright: ''
+    description: open_modem TX/RX loopback, no hardware required
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: no_gui
+    hier_block_src_path: '.:'
+    id: open_modem_loopback
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: open_modem Loopback (software, no hardware)
+    window_size: (1000, 1000)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 8
+    - 8
+    rotation: 0
+    state: enabled
+blocks:
+- name: blocks_message_strobe_0
+  id: blocks_message_strobe
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Sends a fixed test message through the TX chain every 4 s - no
+      GUI message box since this flowgraph has no window (generate_options
+      no_gui) to put one in.
+    msg: pmt.intern("hello via open_modem loopback")
+    period: '4000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 48
+    - 180
+    rotation: 0
+    state: enabled
+- name: open_modem_tx_0
+  id: open_modem_open_modem_tx
+  parameters:
+    ack_max_retries: '3'
+    ack_requested: 'True'
+    ack_timeout_s: '2.0'
+    affinity: ''
+    alias: ''
+    comment: ''
+    dst_id: ALL
+    fec_preset: ''
+    lead_in_s: '0.1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    mode_id: '1'
+    port: mic
+    station_id: K0MDT
+    tail_s: '0.02'
+    tx_level: '0.7'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 296
+    - 164
+    rotation: 0
+    state: enabled
+- name: pdu_to_stream_0
+  id: open_modem_pdu_to_stream
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Converts open_modem_tx's audio_out PDU (the real open_wave
+      burst, float samples) into a float stream, draining it a work() call
+      at a time - the same adapter a live Audio Sink would be fed from
+      (see open_modem_ht.grc). Deliberately not the stock PDU to Tagged
+      Stream block - see this flowgraph's own top-level comment.
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 568
+    - 172
+    rotation: 0
+    state: enabled
+- name: open_modem_rx_0
+  id: open_modem_open_modem_rx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: mode_ids pinned to [1] to match open_modem_tx_0's mode_id - a
+      live flowgraph trying several candidate modes would leave this at
+      its default (try every mode the port fits).
+    comment2: ''
+    fec_preset: ''
+    max_burst_s: '6.0'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    mode_ids: '[1]'
+    port: mic
+    sample_rate: '48000'
+    threshold: '0.4'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 800
+    - 164
+    rotation: 0
+    state: enabled
+- name: blocks_message_debug_0
+  id: blocks_message_debug
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Decoded frames print here (status, mode, snr_db, quality, and
+      for 'ok' also src_id/dst_id/seq + the payload bytes).
+    en_uvec: 'True'
+    log_level: info
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 1040
+    - 148
+    rotation: 0
+    state: enabled
+- name: blocks_message_debug_1
+  id: blocks_message_debug
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: key/unkey events print here - from BOTH open_modem_tx_0 (data
+      bursts) and ack_responder_0 (ACK bursts); in a live flowgraph these
+      would go to a ptt_control block instead (see open_modem_ht.grc).
+    en_uvec: 'True'
+    log_level: info
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 296
+    - 316
+    rotation: 0
+    state: enabled
+- name: ack_responder_0
+  id: open_modem_ack_responder
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Turns open_modem_rx_0's ack_needed into a real ACK burst, fed
+      back through the same pdu_to_stream/Message Debug as
+      open_modem_tx_0's own audio_out/ptt (message ports accept more than
+      one upstream connection) - see this flowgraph's top-level comment.
+    dst_id: ALL
+    fec_preset: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    mode_id: '1'
+    port: mic
+    station_id: K0MDT
+    tx_level: '0.7'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 800
+    - 320
+    rotation: 0
+    state: enabled
+- name: blocks_message_debug_2
+  id: blocks_message_debug
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Fires only if open_modem_tx_0's ack_max_retries is exceeded
+      with no ACK heard - shouldn't happen in this loopback, where the ACK
+      path is real and short.
+    en_uvec: 'True'
+    log_level: info
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 296
+    - 400
+    rotation: 0
+    state: enabled
+connections:
+- - blocks_message_strobe_0
+  - strobe
+  - open_modem_tx_0
+  - pdu_in
+- - open_modem_tx_0
+  - audio_out
+  - pdu_to_stream_0
+  - pdus
+- - open_modem_tx_0
+  - ptt
+  - blocks_message_debug_1
+  - print
+- - pdu_to_stream_0
+  - '0'
+  - open_modem_rx_0
+  - '0'
+- - open_modem_rx_0
+  - pdu_out
+  - blocks_message_debug_0
+  - print
+- - open_modem_rx_0
+  - ack_needed
+  - ack_responder_0
+  - ack_needed
+- - open_modem_rx_0
+  - ack_received
+  - open_modem_tx_0
+  - ack_received
+- - ack_responder_0
+  - audio_out
+  - pdu_to_stream_0
+  - pdus
+- - ack_responder_0
+  - ptt
+  - blocks_message_debug_1
+  - print
+- - open_modem_tx_0
+  - delivery_failed
+  - blocks_message_debug_2
+  - print
+metadata:
+  file_format: 1
+  grc_version: 3.10.9.2

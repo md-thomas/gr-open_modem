@@ -1,0 +1,47 @@
+id: open_modem_ack_responder
+label: ACK Responder
+category: '[open_modem]'
+
+templates:
+  imports: from gnuradio import open_modem
+  make: open_modem.ack_responder(${station_id}, ${dst_id}, ${mode_id}, ${fec_preset}, ${port}, ${tx_level})
+
+parameters:
+- id: station_id
+  label: Station ID
+  dtype: string
+  default: NOCALL
+- id: dst_id
+  label: Destination ID
+  dtype: string
+  default: ALL
+- id: mode_id
+  label: Mode ID
+  dtype: int
+  default: '0'
+  options: ['0', '1', '2', '3', '4', '5']
+  option_labels: ['0: BPSK 600', '1: BPSK 1200', '2: QPSK 1200', '3: QPSK 2400', '4: QPSK 4800', '5: 16QAM 9600']
+- id: fec_preset
+  label: FEC preset (blank = mode default)
+  dtype: string
+  default: ''
+- id: port
+  label: Radio port ('mic', <=1200 baud, or 'data', <=2400 baud)
+  dtype: string
+  default: mic
+- id: tx_level
+  label: TX level (0-1)
+  dtype: float
+  default: '0.7'
+
+inputs:
+- label: ack_needed
+  domain: message
+
+outputs:
+- label: audio_out
+  domain: message
+- label: ptt
+  domain: message
+
+file_format: 1

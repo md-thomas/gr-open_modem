@@ -1,0 +1,73 @@
+id: open_modem_open_modem_tx
+label: open_modem TX
+category: '[open_modem]'
+
+templates:
+  imports: from gnuradio import open_modem
+  make: open_modem.open_modem_tx(${station_id}, ${dst_id}, ${mode_id}, ${fec_preset}, ${port}, ${lead_in_s}, ${tail_s}, ${tx_level}, ${ack_requested}, ${ack_max_retries}, ${ack_timeout_s})
+
+parameters:
+- id: station_id
+  label: Station ID
+  dtype: string
+  default: NOCALL
+- id: dst_id
+  label: Destination ID
+  dtype: string
+  default: ALL
+- id: mode_id
+  label: Mode ID
+  dtype: int
+  default: '0'
+  options: ['0', '1', '2', '3', '4', '5']
+  option_labels: ['0: BPSK 600', '1: BPSK 1200', '2: QPSK 1200', '3: QPSK 2400', '4: QPSK 4800', '5: 16QAM 9600']
+- id: fec_preset
+  label: FEC preset (blank = mode default)
+  dtype: string
+  default: ''
+- id: port
+  label: Radio port ('mic', <=1200 baud, or 'data', <=2400 baud)
+  dtype: string
+  default: mic
+- id: lead_in_s
+  label: Lead-in (s)
+  dtype: float
+  default: '0.25'
+- id: tail_s
+  label: Tail (s)
+  dtype: float
+  default: '0.02'
+- id: tx_level
+  label: TX level (0-1)
+  dtype: float
+  default: '0.7'
+- id: ack_requested
+  label: Request ACK (single-frame messages only)
+  dtype: enum
+  options: ['True', 'False']
+  option_labels: ['On', 'Off']
+  default: 'False'
+- id: ack_max_retries
+  label: Max retries
+  dtype: int
+  default: '3'
+- id: ack_timeout_s
+  label: ACK timeout (s)
+  dtype: float
+  default: '2.0'
+
+inputs:
+- label: pdu_in
+  domain: message
+- label: ack_received
+  domain: message
+
+outputs:
+- label: audio_out
+  domain: message
+- label: ptt
+  domain: message
+- label: delivery_failed
+  domain: message
+
+file_format: 1

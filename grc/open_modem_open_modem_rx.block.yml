@@ -1,0 +1,48 @@
+id: open_modem_open_modem_rx
+label: open_modem RX
+category: '[open_modem]'
+
+templates:
+  imports: from gnuradio import open_modem
+  make: open_modem.open_modem_rx(${mode_ids}, ${fec_preset}, ${port}, ${sample_rate}, ${threshold}, ${max_burst_s})
+
+parameters:
+- id: mode_ids
+  label: Modes to try (blank = all that fit the port)
+  dtype: int_vector
+  default: '[]'
+- id: fec_preset
+  label: FEC preset (blank = each mode's default)
+  dtype: string
+  default: ''
+- id: port
+  label: Radio port ('mic', <=1200 baud, or 'data', <=2400 baud)
+  dtype: string
+  default: mic
+- id: sample_rate
+  label: Sample Rate
+  dtype: int
+  default: '48000'
+- id: threshold
+  label: Sync quality threshold
+  dtype: float
+  default: '0.4'
+- id: max_burst_s
+  label: Max burst wait (s)
+  dtype: float
+  default: '6.0'
+
+inputs:
+- label: in
+  domain: stream
+  dtype: float
+
+outputs:
+- label: pdu_out
+  domain: message
+- label: ack_needed
+  domain: message
+- label: ack_received
+  domain: message
+
+file_format: 1

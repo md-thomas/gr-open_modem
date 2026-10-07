@@ -1,0 +1,105 @@
+gr_modtool bug: "Editing CMakeLists.txt" doesn't actually add the new
+Python block file to the install list
+=========================================================================
+
+Environment
+------------
+GNU Radio 3.10.9.2, apt-packaged on Ubuntu/Debian. gr_modtool from the
+same install. Out-of-tree module created fresh with `gr_modtool newmod`.
+
+What I ran
+-----------
+Scaffolding a pure-Python, message-driven block in a fresh OOT module:
+
+    gr_modtool add open_modem_tx -t general -l python --add-python-qa \
+        --copyright "mdthomas" --argument-list "" -y
+
+(and the same command two more times, for "open_modem_rx" and
+"ptt_control".)
+
+What gr_modtool claimed to do
+-------------------------------
+Each run printed a success log for every file it touched:
+
+    Adding file 'python/open_modem/open_modem_tx.py'...
+    Adding file 'python/open_modem/qa_open_modem_tx.py'...
+    Editing python/open_modem/CMakeLists.txt...
+    Adding file 'grc/open_modem_open_modem_tx.block.yml'...
+    Editing grc/CMakeLists.txt...
+
+It also correctly rewrote python/open_modem/__init__.py to import the new
+block, e.g.:
+
+    from .open_modem_tx import open_modem_tx
+
+What actually happened
+------------------------
+The "Editing python/open_modem/CMakeLists.txt..." line is false. After all
+three `gr_modtool add` calls, that file still read:
+
+    gr_python_install(FILES __init__.py DESTINATION ${GR_PYTHON_DIR}/gnuradio/open_modem)
+
+Only __init__.py was ever in the install list - never appended to, despite
+three separate "Editing..." claims, one per block.
+
+Consequence
+------------
+`make install` only copied __init__.py (plus its .pyc/.pyo) into
+site-packages:
+
+    -- Installing: .../gnuradio/open_modem/__init__.py
+    -- Installing: .../gnuradio/open_modem/__init__.pyc
+    -- Installing: .../gnuradio/open_modem/__init__.pyo
+
+open_modem_tx.py, open_modem_rx.py, and ptt_control.py were never
+installed. But the installed __init__.py still tried to:
+
+    from .open_modem_tx import open_modem_tx
+
+...on a file that doesn't exist in that directory. Result: a guaranteed
+ModuleNotFoundError/ImportError on `from gnuradio import open_modem`,
+from a clean install - even though everything looks fine poking around
+the source tree, since the .py files obviously still exist there.
+
+This is a nasty one to catch because the breakage only shows up after a
+full `make install` into a clean/fresh prefix, not while developing in
+the source directory where the files are sitting right next to each
+other anyway.
+
+The fix
+--------
+Manually append every new block's .py filename to the same macro call in
+python/open_modem/CMakeLists.txt:
+
+    gr_python_install(FILES __init__.py
+                             open_modem_tx.py
+                             open_modem_rx.py
+                             ptt_control.py
+                       DESTINATION ${GR_PYTHON_DIR}/gnuradio/open_modem)
+
+After that fix, `make install` copies all three files and
+`from gnuradio import open_modem` works.
+
+Scope
+------
+- Reproduced identically for all three separate `gr_modtool add` calls in
+  this session - not a one-off glitch.
+- grc/CMakeLists.txt (the file controlling .block.yml installation, i.e.
+  GRC's block picker visibility) WAS edited correctly every time - only
+  the Python install list was affected.
+- Any block added later by hand (bypassing gr_modtool entirely) obviously
+  needs the same manual addition, but that's just normal bookkeeping, not
+  a repeat of this bug - gr_modtool wasn't involved for those.
+
+Takeaway / how to avoid getting bitten
+----------------------------------------
+After every `gr_modtool add -l python ...`, open
+python/<module>/CMakeLists.txt and confirm the gr_python_install(FILES
+...) list actually grew to include the new block. Don't trust the
+"Editing python/<module>/CMakeLists.txt..." log line - verify the diff.
+
+Status
+-------
+Filed as product feedback (type: bug) via the assistant's SendFeedback
+tool during this session - queued locally, not sent upstream yet. Send it
+with /feedback if you want GNU Radio/Anthropic to see it.

@@ -1,0 +1,466 @@
+options:
+  parameters:
+    author: mdthomas
+    catch_exceptions: 'True'
+    category: '[open_modem]'
+    cmake_opt: ''
+    comment: Live HT-over-USB-soundcard station - AIOC or Digirig, autodetected
+      by radio_select (ported from open_wave's own radio_stations.py). Needs
+      real radio hardware attached and licensed operation on whatever
+      frequency the radio is tuned to - see open_wave/RADIO_SETUP.md, this
+      module's own TODO.md/REQUIREMENTS.md, and the warnings there before
+      running this. Only compile-checked here (grcc), not run - this
+      development environment has neither the hardware nor a display.
+    copyright: ''
+    description: open_modem live station over an AIOC/Digirig USB sound
+      card interface
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: qt_gui
+    hier_block_src_path: '.:'
+    id: open_modem_ht
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: open_modem HT Station (AIOC/Digirig)
+    window_size: (1000, 400)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 8
+    - 8
+    rotation: 0
+    state: enabled
+blocks:
+- name: import_0
+  id: import_
+  parameters:
+    alias: ''
+    comment: ''
+    imports: from gnuradio.open_modem import radio_select
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 8
+    - 72
+    rotation: 0
+    state: enabled
+- name: radio
+  id: parameter
+  parameters:
+    alias: ''
+    comment: Which interface to use (aioc/digirig) - blank picks the only
+      one attached, raising an error at startup if there's none or more
+      than one.
+    hide: none
+    label: ''
+    short_id: r
+    type: str
+    value: ''
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 8
+    - 136
+    rotation: 0
+    state: enabled
+- name: station_id
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: ''
+    short_id: s
+    type: str
+    value: NOCALL
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 160
+    - 136
+    rotation: 0
+    state: enabled
+- name: dst_id
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: ''
+    short_id: d
+    type: str
+    value: ALL
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 312
+    - 136
+    rotation: 0
+    state: enabled
+- name: mode_id
+  id: parameter
+  parameters:
+    alias: ''
+    comment: Waveform Mode - see open_modem_open_modem_tx's own dropdown
+      for what each number is. Both stations must use the same mode.
+    hide: none
+    label: ''
+    short_id: m
+    type: intx
+    value: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 464
+    - 136
+    rotation: 0
+    state: enabled
+- name: tx_level
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: ''
+    short_id: l
+    type: eng_float
+    value: '0.7'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 592
+    - 136
+    rotation: 0
+    state: enabled
+- name: station
+  id: variable
+  parameters:
+    comment: Resolved once at startup - raises ValueError immediately (before
+      the window opens) if no interface, or more than one with --radio not
+      given, is attached. See radio_select.pick()'s own docstring. Imports
+      inline (__import__) rather than relying on the Import block above,
+      because GRC's own compile-time validation of a Variable's value
+      expression doesn't share namespace with an Import block in this GNU
+      Radio version - the exact same gap open_modem/open_wave/legacy/gnuradio/phy_sim_loopback.grc's
+      own access_code comment independently documented ("confirmed
+      empirically") - so a bare reference to radio_select from here fails
+      grcc's validator with a NameError even though the Import block's own
+      statement would work fine at real runtime.
+    value: __import__('gnuradio.open_modem.radio_select', fromlist=['pick']).pick(radio or None)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 8
+    - 200
+    rotation: 0
+    state: enabled
+- name: samp_rate
+  id: variable
+  parameters:
+    comment: open_wave's PHY assumes 48 kHz throughout - see open_modem_rx's
+      own module docstring.
+    value: '48000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 160
+    - 200
+    rotation: 0
+    state: enabled
+- name: qtgui_edit_box_msg_0
+  id: qtgui_edit_box_msg
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Type a message and press Enter to transmit it.
+    gui_hint: 0,0,1,1
+    is_pair: 'False'
+    is_static: 'True'
+    key: ''
+    label: Send
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    type: string
+    value: '""'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 8
+    - 280
+    rotation: 0
+    state: enabled
+- name: open_modem_tx_0
+  id: open_modem_open_modem_tx
+  parameters:
+    ack_max_retries: '3'
+    ack_requested: 'True'
+    ack_timeout_s: '2.0'
+    affinity: ''
+    alias: ''
+    comment: ''
+    dst_id: dst_id
+    fec_preset: ''
+    lead_in_s: '0.25'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    mode_id: mode_id
+    port: mic
+    station_id: station_id
+    tail_s: '0.02'
+    tx_level: tx_level
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 280
+    - 272
+    rotation: 0
+    state: enabled
+- name: pdu_to_stream_0
+  id: open_modem_pdu_to_stream
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: See open_modem_loopback.grc's top-level comment and this
+      module's TODO.md for why this, not the stock PDU to Tagged Stream
+      block, feeds the Audio Sink.
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 560
+    - 280
+    rotation: 0
+    state: enabled
+- name: audio_sink_0
+  id: audio_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    device_name: station['tx_device']
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '1'
+    ok_to_block: 'True'
+    samp_rate: samp_rate
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 792
+    - 272
+    rotation: 0
+    state: enabled
+- name: ptt_control_0
+  id: open_modem_ptt_control
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    ptt_line: station['ptt_line']
+    ptt_port: station['ptt_port']
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 280
+    - 400
+    rotation: 0
+    state: enabled
+- name: audio_source_0
+  id: audio_source
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    device_name: station['rx_device']
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_outputs: '1'
+    ok_to_block: 'True'
+    samp_rate: samp_rate
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 8
+    - 496
+    rotation: 0
+    state: enabled
+- name: open_modem_rx_0
+  id: open_modem_open_modem_rx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: mode_ids left at [] (auto) - tries every mode the mic port
+      fits, not just mode_id, since a station should hear a peer that
+      negotiated/was set to a different mode than this one's own TX default.
+    fec_preset: ''
+    max_burst_s: '6.0'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    mode_ids: '[]'
+    port: mic
+    sample_rate: samp_rate
+    threshold: '0.4'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 280
+    - 488
+    rotation: 0
+    state: enabled
+- name: blocks_message_debug_0
+  id: blocks_message_debug
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Decoded frames print here (status, mode, snr_db, quality, and
+      for 'ok' also src_id/dst_id/seq + the payload bytes) - console
+      output alongside the Send window, not its own GUI box (see
+      open_modem_loopback.grc's same choice).
+    en_uvec: 'True'
+    log_level: info
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 560
+    - 480
+    rotation: 0
+    state: enabled
+- name: ack_responder_0
+  id: open_modem_ack_responder
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Turns open_modem_rx_0's ack_needed into a real ACK burst, fed
+      back through the SAME audio_sink/ptt_control as open_modem_tx_0's
+      own audio_out/ptt (message ports accept more than one upstream
+      connection) - closing the same ACK loop
+      open_modem_loopback.grc demonstrates in software, but here over the
+      real radio - this station's own ACK response keys the same
+      transmitter, between receiving and (if ack_requested) sending its
+      own next message.
+    dst_id: dst_id
+    fec_preset: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    mode_id: mode_id
+    port: mic
+    station_id: station_id
+    tx_level: tx_level
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 792
+    - 400
+    rotation: 0
+    state: enabled
+- name: blocks_message_debug_1
+  id: blocks_message_debug
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Fires only if ack_max_retries is exceeded with no ACK heard
+      back from the other station.
+    en_uvec: 'True'
+    log_level: info
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 8
+    - 360
+    rotation: 0
+    state: enabled
+connections:
+- - qtgui_edit_box_msg_0
+  - msg
+  - open_modem_tx_0
+  - pdu_in
+- - open_modem_tx_0
+  - audio_out
+  - pdu_to_stream_0
+  - pdus
+- - open_modem_tx_0
+  - ptt
+  - ptt_control_0
+  - ptt
+- - pdu_to_stream_0
+  - '0'
+  - audio_sink_0
+  - '0'
+- - audio_source_0
+  - '0'
+  - open_modem_rx_0
+  - '0'
+- - open_modem_rx_0
+  - pdu_out
+  - blocks_message_debug_0
+  - print
+- - open_modem_rx_0
+  - ack_needed
+  - ack_responder_0
+  - ack_needed
+- - open_modem_rx_0
+  - ack_received
+  - open_modem_tx_0
+  - ack_received
+- - ack_responder_0
+  - audio_out
+  - pdu_to_stream_0
+  - pdus
+- - ack_responder_0
+  - ptt
+  - ptt_control_0
+  - ptt
+- - open_modem_tx_0
+  - delivery_failed
+  - blocks_message_debug_1
+  - print
+metadata:
+  file_format: 1
+  grc_version: 3.10.9.2

@@ -147,6 +147,20 @@ compiling from the command line - see `examples/README.md`.
 
 `open_modem_ht.grc` needs a real AIOC or Digirig attached (it autodetects
 via `radio_select`, failing loudly at startup if it finds none or more than
-one - name which with `--radio aioc`/`--radio digirig`) and a display (it's
-`qt_gui`, with a "Send" box). See open_wave's own `RADIO_SETUP.md` for
-antenna/level/licensing setup - the same cautions apply here.
+one) and a display (it's `qt_gui`, with a "Send" box):
+
+```
+cd examples
+GRC_BLOCKS_PATH="$HOME/.local/share/gnuradio/grc/blocks" grcc open_modem_ht.grc
+python3 open_modem_ht.py --station-id K0MDT --dst-id K0MDT-2 --mode-id 1
+```
+
+`--radio aioc`/`--radio digirig` names which interface if more than one
+is attached; `--tx-level`/`-l` (default 0.7) is the other CLI flag. One
+difference from the three examples above, not a bug: RX here listens for
+*every* mode the port fits by default, not just `--mode-id`'s - a live
+station should be able to hear a peer transmitting in a different mode
+than this one's own TX default, unlike the self-talking-to-self
+loopback/constellation examples where TX and RX obviously must match.
+See open_wave's own `RADIO_SETUP.md` for antenna/level/licensing setup -
+the same cautions apply here.

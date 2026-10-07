@@ -33,5 +33,14 @@ user-prefix install), then run the generated `<file>.py`.
   (a dead-forever block, then a 168-million-samples-in-5-seconds runaway)
   that showed up without them.
 - **`open_modem_ht.grc`** — the live station: a real AIOC/Digirig over USB
-  audio, autodetected via `radio_select`. Needs real hardware and a
-  display; see the repo README/TODO.md for what's and isn't validated yet.
+  audio, autodetected via `radio_select` (`--radio aioc`/`--radio digirig`
+  to name one if more than one is attached). Needs real hardware and a
+  display; see the repo README/TODO.md for what's and isn't validated
+  yet. `--mode-id`/`-m`, `--station-id`/`-s`, `--dst-id`/`-d`, and
+  `--tx-level`/`-l` are CLI flags, same idea as `open_modem_noisy_loopback.grc`'s
+  shared `mode_id`. One real difference from the other three examples,
+  though, not a bug: `open_modem_rx_0.mode_ids` is left at its default
+  (`[]`, "try every mode the port fits"), not pinned to `[mode_id]` - a
+  live station should be able to hear a peer transmitting in a different
+  mode than this station's own TX default, unlike the self-talking-to-self
+  loopback/constellation examples where TX and RX obviously must match.

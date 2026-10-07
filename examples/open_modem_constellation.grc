@@ -53,7 +53,7 @@ blocks:
     start: '0'
     step: '0.02'
     stop: '2.0'
-    value: '0.3'
+    value: '0.8'
     widget: counter_slider
   states:
     bus_sink: false
@@ -81,7 +81,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [960, 608.0]
+    coordinate: [872, 608.0]
     rotation: 0
     state: enabled
 - name: analog_noise_source_x_0
@@ -136,7 +136,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [520, 592.0]
+    coordinate: [440, 584.0]
     rotation: 180
     state: enabled
 - name: blocks_message_debug_1
@@ -198,7 +198,7 @@ blocks:
     label: ''
     short_id: m
     type: intx
-    value: '1'
+    value: '2'
   states:
     bus_sink: false
     bus_source: false
@@ -225,7 +225,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [856, 448.0]
+    coordinate: [824, 408.0]
     rotation: 180
     state: enabled
 - name: open_modem_tx_0
@@ -274,24 +274,54 @@ blocks:
     rotation: 0
     state: enabled
 - name: pdu_to_tagged_stream_0
-  id: pdu_pdu_to_tagged_stream
+  id: open_modem_pdu_to_stream
   parameters:
     affinity: ''
     alias: ''
     comment: Converts open_modem_rx_0's symbols_out PDU (demodulated complex symbols,
-      truncated to the real frame) into a tagged complex stream for the Constellation
-      Sink. The stock block's buffer limits (see TODO.md) only bite for audio-sample-rate
-      PDUs - symbol counts per burst are hundreds to low thousands, well under that
-      ceiling.
+      truncated to the real frame) into a complex stream for the Constellation Sink.
+      NOT the stock PDU to Tagged Stream block - confirmed live that it hits this
+      system's buffer ceiling (same bug as pdu_to_stream's own docstring describes
+      for the audio-sample-rate case) once enough bursts queue up, and its thread
+      dies permanently when it does, which looked like "the plot stopped updating
+      and the noise slider doesn't fix it" - because it doesn't; the block feeding
+      it is dead. This block drains incrementally instead, so it can't hit that
+      ceiling at all.
+    dtype: complex
     maxoutbuf: '0'
     minoutbuf: '0'
-    tag: packet_len
-    type: complex
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
     coordinate: [1432, 528.0]
+    rotation: 0
+    state: enabled
+- name: blocks_throttle2_0
+  id: blocks_throttle2
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Required here, not optional - pdu_to_tagged_stream_0 has no real
+      source/sink pacing it (nothing like real-time audio hardware governs this
+      symbol-rate stream), so with nothing downstream to rate-limit it, it free-runs
+      as fast as the CPU allows between bursts, filling with idle zeros - confirmed
+      live, 168 MILLION samples in 5 seconds, unthrottled. blocks.throttle's own
+      docstring says exactly this - "should only be used in GUI apps where there is
+      no other rate limiting block" - precisely this flowgraph.
+    ignoretag: 'True'
+    limit: auto
+    maximum: '0.1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samples_per_second: '9600'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1432, 624.0]
     rotation: 0
     state: enabled
 - name: qtgui_const_sink_x_0
@@ -403,7 +433,8 @@ connections:
 - [open_modem_tx_0, delivery_failed, blocks_message_debug_2, print]
 - [open_modem_tx_0, ptt, blocks_message_debug_1, print]
 - [pdu_to_stream_0, '0', blocks_add_xx_0, '0']
-- [pdu_to_tagged_stream_0, '0', qtgui_const_sink_x_0, '0']
+- [blocks_throttle2_0, '0', qtgui_const_sink_x_0, '0']
+- [pdu_to_tagged_stream_0, '0', blocks_throttle2_0, '0']
 
 metadata:
   file_format: 1

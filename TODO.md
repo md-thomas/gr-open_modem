@@ -63,6 +63,36 @@ Companion to [REQUIREMENTS.md](REQUIREMENTS.md).
 
 ## Done (most recent first)
 
+- [x] **Fixed two real bugs in `open_modem_constellation.grc`, found
+      interactively** (user: "symbols stopped plotting... lowering sigma
+      doesn't fix it"):
+      1. The stock `pdu.pdu_to_tagged_stream` feeding the Constellation
+         Sink hit this machine's same 16384-item buffer ceiling that
+         `pdu_to_stream.py` was built to work around for the audio path -
+         wrongly assumed symbol-rate PDUs (hundreds to low thousands per
+         burst) would always stay under it. Confirmed live by tapping the
+         raw stream with a `vector_sink_c`: growth stopped dead the
+         instant `thread_body_wrapper` logged "Buffer too small for
+         min_noutput_items", and - the important part - never resumed for
+         the rest of the run, regardless of noise level. A dead block
+         stays dead; that's why changing the noise slider looked like it
+         should help and didn't. Fixed by generalizing `pdu_to_stream`
+         itself to take a `dtype` ('float', the default, or 'complex')
+         instead of being float-only, and using it (dtype='complex')
+         in place of the stock block. New QA test deliberately exceeds
+         16384 complex items to prove it.
+      2. Fixing #1 uncovered a second, worse bug immediately: with
+         nothing downstream rate-limiting the now-never-dying complex
+         stream, it free-ran as fast as the CPU allowed between bursts -
+         measured at 168 million samples in 5 seconds. `pdu_to_stream`'s
+         always-fill-with-something-when-idle design (right for the
+         audio case, where a real channel is never actually silent) does
+         not generalize to a symbol stream with no real-time pacing
+         behind it at all. Fixed with a `blocks.throttle` (9600 items/s)
+         between the two - its own docstring says exactly this is its
+         job ("should only be used in GUI apps where there is no other
+         rate limiting block"). Verified over a full 40s run: steady
+         ~9700 samples/s growth throughout, no stall, no runaway.
 - [x] **Added a real constellation display** - `open_modem_rx` gained a
       `symbols_out` message port (and `_phy.decode_burst` now returns the
       demodulated `symbols`, a non-breaking additive change) publishing

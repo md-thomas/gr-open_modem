@@ -4,9 +4,16 @@ category: '[open_modem]'
 
 templates:
   imports: from gnuradio import open_modem
-  make: open_modem.pdu_to_stream()
+  make: open_modem.pdu_to_stream(${dtype.pyval})
 
-parameters: []
+parameters:
+- id: dtype
+  label: Type
+  dtype: enum
+  options: [float, complex]
+  option_attributes:
+    pyval: ["'float'", "'complex'"]
+  default: float
 
 inputs:
 - label: pdus
@@ -15,6 +22,6 @@ inputs:
 outputs:
 - label: out
   domain: stream
-  dtype: float
+  dtype: ${ dtype }
 
 file_format: 1

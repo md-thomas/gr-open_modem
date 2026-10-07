@@ -26,7 +26,12 @@ user-prefix install), then run the generated `<file>.py`.
   watching the plot). Tight clusters at the mode's ideal points means a
   clean decode; a smeared ring or blob means you've found the cliff. The
   visual counterpart to `apps/margin_sweep.py`'s numbers and
-  `open_modem_noisy_loopback.grc`'s console output.
+  `open_modem_noisy_loopback.grc`'s console output. The symbol stream
+  goes through `pdu_to_stream` (dtype `complex`, not the stock `PDU to
+  Tagged Stream`) and then a `Throttle` (9600 items/s) before the sink -
+  both load-bearing, not cosmetic; see `TODO.md` for the two real bugs
+  (a dead-forever block, then a 168-million-samples-in-5-seconds runaway)
+  that showed up without them.
 - **`open_modem_ht.grc`** — the live station: a real AIOC/Digirig over USB
   audio, autodetected via `radio_select`. Needs real hardware and a
   display; see the repo README/TODO.md for what's and isn't validated yet.

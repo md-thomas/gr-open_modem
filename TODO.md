@@ -78,6 +78,26 @@ Companion to [REQUIREMENTS.md](REQUIREMENTS.md).
 
 ## Done (most recent first)
 
+- [x] **Added a Constellation Sink to `open_modem_station_sim.grc`**
+      (same `symbols_out` -> `pdu_to_stream(dtype='complex')` ->
+      `Throttle(9600/s)` -> `qtgui_const_sink_x` chain as
+      `open_modem_constellation.grc`, including marking `open_modem_rx`'s
+      `symbols_out` port `optional: true` in its `.block.yml` - it was
+      implicitly required before, which `grcc` correctly rejected the
+      first time this flowgraph was built without it connected). Verified
+      for real across the two-process simulation, not just compiled:
+      spied on `open_modem_rx_0.message_port_pub` in one process while
+      the other sent a message - `symbols_out` fired three times (880
+      symbols each, matching mode 1/BPSK), one per real transmission
+      attempt (confirmed via the sender's own key/unkey log: it actually
+      retried twice this run, the same pre-existing dedup gap recurring
+      with different timing, not a new bug). Also corrected a stale claim
+      in `examples/README.md`: the PipeWire null-sink mechanism is
+      same-machine-only (a local audio-server socket), not "same machine
+      or different ones" as an earlier pass had said - cross-machine
+      simulation (no hardware) would need a real network transport
+      (GNU Radio's own ZeroMQ/UDP blocks) in place of Audio Sink/Source,
+      not built.
 - [x] **Added a simulation path with no hardware and no kernel modules** -
       `examples/open_modem_station_sim.grc`, one simulated station (run
       twice, two separate processes, to talk to itself-as-two-stations) -

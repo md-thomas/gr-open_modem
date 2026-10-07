@@ -4,22 +4,20 @@ options:
     catch_exceptions: 'True'
     category: '[open_modem]'
     cmake_opt: ''
-    comment: One simulated station - run this TWICE (two separate processes,
-      same machine or different ones) to simulate a real two-way exchange with
-      no hardware at all. Each instance's Audio Sink/Source use ALSA's 'pulse'
-      device, redirected per-process to a PipeWire/PulseAudio null-sink pair
-      (no root/kernel module needed, unlike snd-aloop) via PULSE_SINK/PULSE_SOURCE
-      environment variables set before launch - see examples/README.md for the
-      exact pactl setup and the two launch commands. Each station injects
-      Gaussian noise into its OWN outgoing audio before it leaves this process
-      (a live 'Noise sigma' slider - a real channel model, not a placeholder),
-      so the two directions can be noisy independently, same as a real
-      asymmetric radio link. Type into Send, watch Received - the GUI
-      equivalent of typing into ota_station.py or radio_send.py/radio_listen.py
-      from a terminal.
+    comment: One simulated station - run this TWICE (two separate processes, same
+      machine or different ones) to simulate a real two-way exchange with no hardware
+      at all. Each instance's Audio Sink/Source use ALSA's 'pulse' device, redirected
+      per-process to a PipeWire/PulseAudio null-sink pair (no root/kernel module needed,
+      unlike snd-aloop) via PULSE_SINK/PULSE_SOURCE environment variables set before
+      launch - see examples/README.md for the exact pactl setup and the two launch
+      commands. Each station injects Gaussian noise into its OWN outgoing audio before
+      it leaves this process (a live 'Noise sigma' slider - a real channel model,
+      not a placeholder), so the two directions can be noisy independently, same as
+      a real asymmetric radio link. Type into Send, watch Received - the GUI equivalent
+      of typing into ota_station.py or radio_send.py/radio_listen.py from a terminal.
     copyright: ''
-    description: One simulated open_modem station - run two instances to talk
-      to each other, no hardware needed
+    description: One simulated open_modem station - run two instances to talk to each
+      other, no hardware needed
     gen_cmake: 'On'
     gen_linking: dynamic
     generate_options: qt_gui
@@ -36,7 +34,7 @@ options:
     sizing_mode: fixed
     thread_safe_setters: ''
     title: open_modem Simulated Station
-    window_size: (900, 600)
+    window_size: (900, 900)
   states:
     bus_sink: false
     bus_source: false
@@ -46,81 +44,11 @@ options:
     state: enabled
 
 blocks:
-- name: station_id
-  id: parameter
-  parameters:
-    alias: ''
-    comment: ''
-    hide: none
-    label: ''
-    short_id: s
-    type: str
-    value: NOCALL
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [8, 72.0]
-    rotation: 0
-    state: enabled
-- name: dst_id
-  id: parameter
-  parameters:
-    alias: ''
-    comment: ''
-    hide: none
-    label: ''
-    short_id: d
-    type: str
-    value: ALL
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [160, 72.0]
-    rotation: 0
-    state: enabled
-- name: mode_id
-  id: parameter
-  parameters:
-    alias: ''
-    comment: Both stations must use the same mode - there's nothing here to
-      negotiate it automatically.
-    hide: none
-    label: ''
-    short_id: m
-    type: intx
-    value: '1'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [312, 72.0]
-    rotation: 0
-    state: enabled
-- name: tx_level
-  id: parameter
-  parameters:
-    alias: ''
-    comment: ''
-    hide: none
-    label: ''
-    short_id: l
-    type: eng_float
-    value: '0.7'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [464, 72.0]
-    rotation: 0
-    state: enabled
 - name: noise_sigma
   id: variable_qtgui_range
   parameters:
-    comment: This station's OWN outgoing noise - the other station's incoming
-      link quality depends only on this slider, not on anything set at the
-      far end.
+    comment: This station's OWN outgoing noise - the other station's incoming link
+      quality depends only on this slider, not on anything set at the far end.
     gui_hint: 0,0,1,2
     label: Noise sigma (this station's outgoing link)
     min_len: '200'
@@ -138,49 +66,193 @@ blocks:
     coordinate: [8, 136.0]
     rotation: 0
     state: enabled
-- name: qtgui_edit_box_msg_0
-  id: qtgui_edit_box_msg
+- name: ack_responder_0
+  id: open_modem_ack_responder
   parameters:
     affinity: ''
     alias: ''
-    comment: Type a message and press Enter to transmit it.
-    gui_hint: 1,0,1,2
-    is_pair: 'False'
-    is_static: 'True'
-    key: ''
-    label: Send
+    comment: Shares the SAME pdu_to_stream_0/noisy channel/Audio Sink as open_modem_tx_0
+      - an ACK goes out over the exact same simulated link.
+    dst_id: dst_id
+    fec_preset: ''
     maxoutbuf: '0'
     minoutbuf: '0'
-    type: string
-    value: '""'
+    mode_id: mode_id
+    port: mic
+    station_id: station_id
+    tx_level: tx_level
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [8, 200.0]
+    coordinate: [520, 384.0]
     rotation: 0
     state: enabled
-- name: qtgui_edit_box_msg_1
-  id: qtgui_edit_box_msg
+- name: analog_noise_source_x_0
+  id: analog_noise_source_x
   parameters:
     affinity: ''
     alias: ''
-    comment: Read-only - shows the most recent decoded message (or heard-but-undecoded
-      note), fed via its 'val' port, never typed into.
-    gui_hint: 2,0,1,2
-    is_pair: 'False'
-    is_static: 'True'
-    key: ''
-    label: Received
+    amp: noise_sigma
+    comment: This station's own channel model, applied to its OWN outgoing audio before
+      it ever leaves this process.
     maxoutbuf: '0'
     minoutbuf: '0'
-    type: string
-    value: '""'
+    noise_type: analog.GR_GAUSSIAN
+    seed: '42'
+    type: float
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [8, 264.0]
+    coordinate: [992, 280.0]
+    rotation: 0
+    state: enabled
+- name: audio_sink_0
+  id: audio_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Device is always 'pulse' here - which actual PipeWire/PulseAudio sink
+      that reaches is set per-process by the PULSE_SINK environment variable at launch,
+      not by anything in this flowgraph. See examples/README.md.
+    device_name: pulse
+    num_inputs: '1'
+    ok_to_block: 'True'
+    samp_rate: '48000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1184, 288.0]
+    rotation: 0
+    state: enabled
+- name: audio_source_0
+  id: audio_source
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Device is always 'pulse' here too - redirected per-process via PULSE_SOURCE
+      at launch to the OTHER station's outgoing link (its monitor), not this station's
+      own.
+    device_name: pulse
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_outputs: '1'
+    ok_to_block: 'True'
+    samp_rate: '48000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [88, 568.0]
+    rotation: 0
+    state: enabled
+- name: blocks_add_xx_0
+  id: blocks_add_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1088, 184.0]
+    rotation: 0
+    state: enabled
+- name: blocks_message_debug_0
+  id: blocks_message_debug
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: key/unkey events from open_modem_tx_0/ack_responder_0 - informational
+      only, no real PTT hardware in a simulation.
+    en_uvec: 'True'
+    log_level: info
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1096, 400.0]
+    rotation: 0
+    state: enabled
+- name: blocks_message_debug_1
+  id: blocks_message_debug
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Fires if ack_max_retries is exceeded with no ACK heard back.
+    en_uvec: 'True'
+    log_level: info
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1080, 568.0]
+    rotation: 0
+    state: enabled
+- name: dst_id
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: ''
+    short_id: d
+    type: str
+    value: ALL
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [288, 8.0]
+    rotation: 0
+    state: enabled
+- name: mode_id
+  id: parameter
+  parameters:
+    alias: ''
+    comment: Both stations must use the same mode - there's nothing here to negotiate
+      it automatically.
+    hide: none
+    label: ''
+    short_id: m
+    type: intx
+    value: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [376, 8.0]
+    rotation: 0
+    state: enabled
+- name: open_modem_rx_0
+  id: open_modem_open_modem_rx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: mode_ids left at [] (auto, try every mode the port fits), not pinned
+      to [mode_id] - this station should be able to hear a peer on a different mode
+      than its own TX default, same reasoning as open_modem_ht.grc.
+    fec_preset: ''
+    max_burst_s: '6.0'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    mode_ids: '[]'
+    port: mic
+    sample_rate: '48000'
+    threshold: '0.4'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [288, 576.0]
     rotation: 0
     state: enabled
 - name: open_modem_tx_0
@@ -206,7 +278,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [328, 200.0]
+    coordinate: [488, 140.0]
     rotation: 0
     state: enabled
 - name: pdu_to_stream_0
@@ -214,10 +286,9 @@ blocks:
   parameters:
     affinity: ''
     alias: ''
-    comment: Drains open_modem_tx_0's (and ack_responder_0's) audio_out PDUs
-      into a float stream a work() call at a time - not the stock PDU to
-      Tagged Stream block, same reason as every other example here (see
-      TODO.md).
+    comment: Drains open_modem_tx_0's (and ack_responder_0's) audio_out PDUs into
+      a float stream a work() call at a time - not the stock PDU to Tagged Stream
+      block, same reason as every other example here (see TODO.md).
     dtype: float
     maxoutbuf: '0'
     minoutbuf: '0'
@@ -225,165 +296,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [600, 192.0]
-    rotation: 0
-    state: enabled
-- name: analog_noise_source_x_0
-  id: analog_noise_source_x
-  parameters:
-    affinity: ''
-    alias: ''
-    amp: noise_sigma
-    comment: This station's own channel model, applied to its OWN outgoing
-      audio before it ever leaves this process.
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    noise_type: analog.GR_GAUSSIAN
-    seed: '42'
-    type: float
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [600, 296.0]
-    rotation: 0
-    state: enabled
-- name: blocks_add_xx_0
-  id: blocks_add_xx
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    num_inputs: '2'
-    type: float
-    vlen: '1'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [848, 232.0]
-    rotation: 0
-    state: enabled
-- name: audio_sink_0
-  id: audio_sink
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: Device is always 'pulse' here - which actual PipeWire/PulseAudio
-      sink that reaches is set per-process by the PULSE_SINK environment
-      variable at launch, not by anything in this flowgraph. See
-      examples/README.md.
-    device_name: pulse
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    num_inputs: '1'
-    ok_to_block: 'True'
-    samp_rate: '48000'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1080, 216.0]
-    rotation: 0
-    state: enabled
-- name: ack_responder_0
-  id: open_modem_ack_responder
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: Shares the SAME pdu_to_stream_0/noisy channel/Audio Sink as
-      open_modem_tx_0 - an ACK goes out over the exact same simulated link.
-    dst_id: dst_id
-    fec_preset: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    mode_id: mode_id
-    port: mic
-    station_id: station_id
-    tx_level: tx_level
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [328, 408.0]
-    rotation: 0
-    state: enabled
-- name: blocks_message_debug_0
-  id: blocks_message_debug
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: key/unkey events from open_modem_tx_0/ack_responder_0 - informational
-      only, no real PTT hardware in a simulation.
-    en_uvec: 'True'
-    log_level: info
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [600, 408.0]
-    rotation: 0
-    state: enabled
-- name: blocks_message_debug_1
-  id: blocks_message_debug
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: Fires if ack_max_retries is exceeded with no ACK heard back.
-    en_uvec: 'True'
-    log_level: info
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [328, 488.0]
-    rotation: 0
-    state: enabled
-- name: audio_source_0
-  id: audio_source
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: Device is always 'pulse' here too - redirected per-process via
-      PULSE_SOURCE at launch to the OTHER station's outgoing link (its
-      monitor), not this station's own.
-    device_name: pulse
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    num_outputs: '1'
-    ok_to_block: 'True'
-    samp_rate: '48000'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [8, 568.0]
-    rotation: 0
-    state: enabled
-- name: open_modem_rx_0
-  id: open_modem_open_modem_rx
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: mode_ids left at [] (auto, try every mode the port fits), not
-      pinned to [mode_id] - this station should be able to hear a peer on a
-      different mode than its own TX default, same reasoning as
-      open_modem_ht.grc.
-    fec_preset: ''
-    max_burst_s: '6.0'
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    mode_ids: '[]'
-    port: mic
-    sample_rate: '48000'
-    threshold: '0.4'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [280, 568.0]
+    coordinate: [992, 88.0]
     rotation: 0
     state: enabled
 - name: pdu_to_text_0
@@ -391,15 +304,177 @@ blocks:
   parameters:
     affinity: ''
     alias: ''
-    comment: Formats open_modem_rx_0's decoded-frame PDU into one readable
-      line for the Received box, which wants a plain string, not a raw PDU.
+    comment: Formats open_modem_rx_0's decoded-frame PDU into one readable line for
+      the Received box, which wants a plain string, not a raw PDU.
     maxoutbuf: '0'
     minoutbuf: '0'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [560, 568.0]
+    coordinate: [264, 488.0]
+    rotation: 180
+    state: enabled
+- name: qtgui_edit_box_msg_0
+  id: qtgui_edit_box_msg
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Type a message and press Enter to transmit it.
+    gui_hint: 1,0,1,2
+    is_pair: 'False'
+    is_static: 'True'
+    key: ''
+    label: Send
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    type: string
+    value: '""'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [216, 152.0]
+    rotation: 0
+    state: enabled
+- name: qtgui_edit_box_msg_1
+  id: qtgui_edit_box_msg
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Read-only - shows the most recent decoded message (or heard-but-undecoded
+      note), fed via its 'val' port, never typed into.
+    gui_hint: 2,0,1,2
+    is_pair: 'False'
+    is_static: 'True'
+    key: ''
+    label: Received
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    type: string
+    value: '""'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [48, 304.0]
+    rotation: 180
+    state: enabled
+- name: pdu_to_stream_1
+  id: open_modem_pdu_to_stream
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Converts open_modem_rx_0's symbols_out PDU (demodulated complex
+      symbols, truncated to the real frame) into a complex stream for the
+      Constellation Sink - not the stock PDU to Tagged Stream block, same
+      buffer-ceiling reason as open_modem_constellation.grc.
+    dtype: complex
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [600, 648.0]
+    rotation: 0
+    state: enabled
+- name: blocks_throttle2_0
+  id: blocks_throttle2
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Required here, not optional - see open_modem_constellation.grc's own
+      comment on this block (TODO.md has the full story - 168 million samples in
+      5 seconds without it).
+    ignoretag: 'True'
+    limit: auto
+    maximum: '0.1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samples_per_second: '9600'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [600, 744.0]
+    rotation: 0
+    state: enabled
+- name: qtgui_const_sink_x_0
+  id: qtgui_const_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    autoscale: 'False'
+    axislabels: 'True'
+    color1: '"blue"'
+    comment: Each point is one demodulated symbol from a burst THIS station
+      received - i.e. what the far end actually sent, degraded by whatever
+      noise_sigma the far end has set on its own outgoing link (not this
+      station's own slider above).
+    grid: 'True'
+    gui_hint: 3,0,1,2
+    label1: ''
+    legend: 'True'
+    marker1: '0'
+    name: '""'
+    nconnections: '1'
+    size: '1024'
+    style1: '0'
+    tr_chan: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_slope: qtgui.TRIG_SLOPE_POS
+    tr_tag: '""'
+    type: complex
+    update_time: '0.10'
+    width1: '1'
+    xmax: '2'
+    xmin: '-2'
+    ymax: '2'
+    ymin: '-2'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [856, 648.0]
+    rotation: 0
+    state: enabled
+- name: station_id
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: ''
+    short_id: s
+    type: str
+    value: K0MDT-1
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [184, 8.0]
+    rotation: 0
+    state: enabled
+- name: tx_level
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: ''
+    short_id: l
+    type: eng_float
+    value: '0.7'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [464, 8.0]
     rotation: 0
     state: enabled
 
@@ -412,6 +487,9 @@ connections:
 - [open_modem_rx_0, ack_needed, ack_responder_0, ack_needed]
 - [open_modem_rx_0, ack_received, open_modem_tx_0, ack_received]
 - [open_modem_rx_0, pdu_out, pdu_to_text_0, pdu_in]
+- [open_modem_rx_0, symbols_out, pdu_to_stream_1, pdus]
+- [pdu_to_stream_1, '0', blocks_throttle2_0, '0']
+- [blocks_throttle2_0, '0', qtgui_const_sink_x_0, '0']
 - [open_modem_tx_0, audio_out, pdu_to_stream_0, pdus]
 - [open_modem_tx_0, delivery_failed, blocks_message_debug_1, print]
 - [open_modem_tx_0, ptt, blocks_message_debug_0, print]

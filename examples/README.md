@@ -33,20 +33,30 @@ user-prefix install), then run the generated `<file>.py`.
   (a dead-forever block, then a 168-million-samples-in-5-seconds runaway)
   that showed up without them.
 - **`open_modem_station_sim.grc`** — a simulation path alongside the RF
-  path above: one simulated station, with a GUI "Send" box to type into
-  and a read-only "Received" box (via the new `pdu_to_text` block - a
-  QT GUI Message Edit Box fed through its `val` port, the same trick the
-  archived `phy_sim_loopback.grc`'s "Received"/"Link Stats" boxes used)
-  instead of reading console output. **Run it twice** - two separate
-  processes, same machine or different ones, no hardware at all - to
-  simulate a real two-way exchange. Each instance's own "Noise sigma"
-  slider is a real channel model on *its own* outgoing audio (so the two
-  directions can be independently noisy, like a real asymmetric link),
-  and Audio Sink/Source use ALSA's `pulse` device, redirected per-process
-  via `PULSE_SINK`/`PULSE_SOURCE` to a PipeWire/PulseAudio null-sink pair
-  - no root or kernel module needed (confirmed: this doesn't need
-  `snd-aloop`, which this sandboxed dev environment couldn't load at all -
-  `modprobe` requires privileges this environment doesn't have).
+  path above: one simulated station, with a GUI "Send" box to type into,
+  a read-only "Received" box (via the new `pdu_to_text` block - a QT GUI
+  Message Edit Box fed through its `val` port, the same trick the archived
+  `phy_sim_loopback.grc`'s "Received"/"Link Stats" boxes used) instead of
+  reading console output, and a live Constellation Sink of what this
+  station actually demodulated (same `pdu_to_stream(dtype='complex')` ->
+  `Throttle` -> sink chain as `open_modem_constellation.grc` - the stock
+  `PDU to Tagged Stream` would hit the same buffer-ceiling bug there too).
+  **Run it twice** - two separate processes, same machine, no hardware at
+  all - to simulate a real two-way exchange. **Same machine only**: the
+  two processes exchange audio through ALSA's `pulse` device, redirected
+  per-process via `PULSE_SINK`/`PULSE_SOURCE` to a PipeWire/PulseAudio
+  null-sink pair local to this machine's audio server - there's no
+  cross-machine visibility built into that at all (confirmed: this needs
+  no root or kernel module, unlike `snd-aloop`, which this sandboxed dev
+  environment couldn't load - `modprobe` requires privileges it doesn't
+  have - but it's inherently local-only either way). For different
+  computers with no hardware, this would need a real network transport
+  (GNU Radio's own ZeroMQ or UDP blocks) in place of Audio Sink/Source -
+  not built. Each instance's own "Noise sigma" slider is a real channel
+  model on *its own* outgoing audio (so the two directions can be
+  independently noisy, like a real asymmetric link) - confirmed real
+  noisy audio samples genuinely transit the loopback, not an abstract
+  separate "channel" stage.
 
   One-time setup (either side can do this, they're machine-wide):
   ```

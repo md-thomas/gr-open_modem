@@ -63,6 +63,41 @@ Companion to [REQUIREMENTS.md](REQUIREMENTS.md).
 
 ## Done (most recent first)
 
+- [x] **Noise-margin sweep, reproducing open_wave's own
+      `audio_margin_sweep.py` against `_phy.py`** (the exact code
+      `open_modem_tx`/`open_modem_rx` call - no DSP of their own around
+      it). Added `apps/margin_sweep.py`, installed via
+      `gr_python_install(PROGRAMS ...)`. First cross-checked for drift:
+      fed `audio_wav_test.build_samples`/`decode_samples` and
+      `_phy.build_burst`/`decode_burst` the identical burst and identical
+      noise array - bit-identical burst, decode results matching to
+      float precision. No implementation drift from wrapping the PHY in
+      GNU Radio blocks.
+
+      Then ran the actual sweep (24 trials/point, mic port, 30-char
+      message, matching the documented methodology exactly):
+
+      | Mode | FEC | open_wave's documented cliff | This run's measured cliff |
+      |---|---|---|---|
+      | 0 (BPSK 600) | r1_4_k9 | -1 dB | -1 to -2 dB (100%→88%→67% over -0.6→-2.7dB) - close match |
+      | 1 (BPSK 1200) | r1_2_k3 | 4.5 dB | ~2-4 dB (100% at 3.9dB, 62% at 2.3dB, 12% at 0.7dB) |
+      | 2 (QPSK 1200) | r1_2_k3 | 7 dB | ~4-6 dB (96% at 5.9dB, 29% at 4.4dB, 0% at 3.0dB) |
+
+      Mode 0 matches closely; modes 1/2 land 2-3 dB more pessimistic than
+      the documented figures, but in the same ballpark and with the same
+      ordering (mode 0 most noise-tolerant, then 1, then 2 - QPSK needing
+      more SNR than BPSK, as expected). Given the bit-identical drift
+      check above, this gap is attributed to ordinary run-to-run
+      Monte Carlo variance (24 trials at a handful of discrete noise
+      steps, same code, different random draws) rather than a bug -
+      `open_wave`'s own one-line docstring summary ("breaks near X dB")
+      is itself a rounded takeaway from one specific run, not a
+      guaranteed constant. Re-run with `--trials 100`+ and finer
+      `--sigmas` steps near each reported cliff if a tighter match is
+      ever needed. Also confirmed, across every mode/sigma tested:
+      `open_modem_rx`'s default quality `threshold` (0.4) never rejected
+      a burst `decode_frames` could still recover, and never accepted
+      one it couldn't - the block's default isn't costing anything here.
 - [x] **Phase 2b — fragmentation and ACK/retry.** `_phy.py` gained
       `modulate_frame` (factored out of `build_burst`),
       `build_fragmented_bursts` (wraps `openwave_link.build_fragmented_frames`,

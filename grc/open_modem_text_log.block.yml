@@ -1,0 +1,40 @@
+id: open_modem_text_log
+label: Text Log (scrolling)
+category: '[open_modem]'
+flags: [ python ]
+
+parameters:
+- id: max_lines
+  label: Max lines kept
+  dtype: int
+  default: '200'
+- id: gui_hint
+  label: GUI Hint
+  dtype: gui_hint
+  hide: part
+
+inputs:
+- label: text
+  domain: message
+
+outputs: []
+
+templates:
+  imports: from gnuradio import open_modem
+  make: |-
+    <%
+        win = 'self._%s_win'%id
+    %>\
+    open_modem.text_log(${max_lines})
+    ${win} = self.${id}.qwidget()
+    ${gui_hint() % win}
+
+documentation: |-
+  A scrolling, multi-line, read-only text log - GNU Radio has no stock
+  block like this, only single-line ones (QT GUI Message Edit Box used
+  as a display, QT GUI Entry, QT GUI Label). Each 'text' message (a
+  plain string, e.g. from open_modem's own pdu_to_text) appends a new
+  line rather than replacing the previous one. The GUI hint positions it
+  within the application the same way every other QT GUI widget's does.
+
+file_format: 1

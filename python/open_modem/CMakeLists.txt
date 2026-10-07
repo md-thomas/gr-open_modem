@@ -28,6 +28,7 @@ gr_python_install(FILES __init__.py
                          pdu_to_stream.py
                          ack_responder.py
                          pdu_to_text.py
+                         text_log.py
                    DESTINATION ${GR_PYTHON_DIR}/gnuradio/open_modem)
 
 ########################################################################
@@ -50,3 +51,4 @@ GR_ADD_TEST(qa_radio_select ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_
 GR_ADD_TEST(qa_pdu_to_stream ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_pdu_to_stream.py)
 GR_ADD_TEST(qa_ack_responder ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_ack_responder.py)
 GR_ADD_TEST(qa_pdu_to_text ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_pdu_to_text.py)
+GR_ADD_TEST(qa_text_log ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_text_log.py)

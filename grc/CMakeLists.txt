@@ -12,4 +12,5 @@ install(FILES
     open_modem_ptt_control.block.yml
     open_modem_pdu_to_stream.block.yml
     open_modem_ack_responder.block.yml
-    open_modem_pdu_to_text.block.yml DESTINATION share/gnuradio/grc/blocks)
+    open_modem_pdu_to_text.block.yml
+    open_modem_text_log.block.yml DESTINATION share/gnuradio/grc/blocks)

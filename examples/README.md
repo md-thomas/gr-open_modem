@@ -32,17 +32,21 @@ user-prefix install), then run the generated `<file>.py`.
   both load-bearing, not cosmetic; see `TODO.md` for the two real bugs
   (a dead-forever block, then a 168-million-samples-in-5-seconds runaway)
   that showed up without them.
-- **`open_modem_station_sim.grc`** — a simulation path alongside the RF
-  path above: one simulated station, with a GUI "Send" box to type into,
-  a read-only "Received" box (via the new `pdu_to_text` block - a QT GUI
-  Message Edit Box fed through its `val` port, the same trick the archived
-  `phy_sim_loopback.grc`'s "Received"/"Link Stats" boxes used) instead of
-  reading console output, and a live Constellation Sink of what this
-  station actually demodulated (same `pdu_to_stream(dtype='complex')` ->
-  `Throttle` -> sink chain as `open_modem_constellation.grc` - the stock
-  `PDU to Tagged Stream` would hit the same buffer-ceiling bug there too).
-  **Run it twice** - two separate processes, same machine, no hardware at
-  all - to simulate a real two-way exchange. **Same machine only**: the
+- **`open_modem_station1_sim.grc`** / **`open_modem_station2_sim.grc`** — a
+  simulation path alongside the RF path above: two pre-configured copies
+  of the same simulated station (station IDs `K0MDT-1` and `K0MDT-2`;
+  created via GRC's "Save As" from a single original, which no longer
+  exists as a separate file), each with a GUI "Send" box to type into, a
+  scrolling read-only "Received" text area (via the new `text_log` block
+  - a raw PyQt `QPlainTextEdit`, fed through its `text` port from the
+  `pdu_to_text` block; this replaced an earlier single-line QT GUI
+  Message Edit Box, which overwrote rather than accumulated each new
+  message), and a live Constellation Sink of what this station actually
+  demodulated (same `pdu_to_stream(dtype='complex')` -> `Throttle` ->
+  sink chain as `open_modem_constellation.grc` - the stock `PDU to
+  Tagged Stream` would hit the same buffer-ceiling bug there too).
+  **Run one instance of each** - two separate processes, same machine, no
+  hardware at all - to simulate a real two-way exchange. **Same machine only**: the
   two processes exchange audio through ALSA's `pulse` device, redirected
   per-process via `PULSE_SINK`/`PULSE_SOURCE` to a PipeWire/PulseAudio
   null-sink pair local to this machine's audio server - there's no
@@ -63,16 +67,21 @@ user-prefix install), then run the generated `<file>.py`.
   pactl load-module module-null-sink sink_name=link_a_to_b
   pactl load-module module-null-sink sink_name=link_b_to_a
   ```
-  Then, two terminals:
+  Then, two terminals - `station1`/`station2` already default to
+  `station_id` `K0MDT-1`/`K0MDT-2` (still overridable with `-s`/`-d` if
+  you want different callsigns):
   ```
   PULSE_SINK=link_a_to_b PULSE_SOURCE=link_b_to_a.monitor \
-      python3 open_modem_station_sim.py -s K0MDT-1 -d K0MDT-2 -m 1
+      python3 open_modem_station1_sim.py -m 1
   PULSE_SINK=link_b_to_a PULSE_SOURCE=link_a_to_b.monitor \
-      python3 open_modem_station_sim.py -s K0MDT-2 -d K0MDT-1 -m 1
+      python3 open_modem_station2_sim.py -m 1
   ```
-  Verified live (two real processes, headless): station B's Received box
-  showed `[K0MDT-1] hello from station A  (SNR 17.6 dB)` after typing
-  into A's Send box. One real, pre-existing gap this surfaced, not
+  Verified live (two real processes, headless): station B's Received
+  text area showed `[K0MDT-1] hello from station A  (SNR 17.6 dB)` after
+  typing into A's Send box - appended as its own line, not overwriting
+  whatever was there before (the reason this is a scrolling `text_log`
+  now rather than the single-line box used when this was first
+  verified). One real, pre-existing gap this surfaced, not
   introduced by this flowgraph: `open_modem_rx` doesn't deduplicate by
   Sequence Number, so an ACK that arrives just after its 2s timeout
   (plausible here - this loopback path adds its own latency) causes a

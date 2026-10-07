@@ -22,7 +22,7 @@ options:
     gen_linking: dynamic
     generate_options: qt_gui
     hier_block_src_path: '.:'
-    id: open_modem_station_sim
+    id: open_modem_station1_sim
     max_nouts: '0'
     output_language: python
     placement: (0,0)
@@ -33,7 +33,7 @@ options:
     run_options: prompt
     sizing_mode: fixed
     thread_safe_setters: ''
-    title: open_modem Simulated Station
+    title: open_modem Simulated Station 1 (K0MDT-1)
     window_size: (900, 900)
   states:
     bus_sink: false
@@ -337,22 +337,11 @@ blocks:
     coordinate: [216, 152.0]
     rotation: 0
     state: enabled
-- name: qtgui_edit_box_msg_1
-  id: qtgui_edit_box_msg
+- name: text_log_0
+  id: open_modem_text_log
   parameters:
-    affinity: ''
-    alias: ''
-    comment: Read-only - shows the most recent decoded message (or heard-but-undecoded
-      note), fed via its 'val' port, never typed into.
     gui_hint: 2,0,1,2
-    is_pair: 'False'
-    is_static: 'True'
-    key: ''
-    label: Received
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    type: string
-    value: '""'
+    max_lines: '200'
   states:
     bus_sink: false
     bus_source: false
@@ -494,7 +483,7 @@ connections:
 - [open_modem_tx_0, delivery_failed, blocks_message_debug_1, print]
 - [open_modem_tx_0, ptt, blocks_message_debug_0, print]
 - [pdu_to_stream_0, '0', blocks_add_xx_0, '0']
-- [pdu_to_text_0, text, qtgui_edit_box_msg_1, val]
+- [pdu_to_text_0, text, text_log_0, text]
 - [qtgui_edit_box_msg_0, msg, open_modem_tx_0, pdu_in]
 
 metadata:

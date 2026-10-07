@@ -5,7 +5,8 @@ Companion to [REQUIREMENTS.md](REQUIREMENTS.md).
 ## Open
 
 - [ ] **`open_modem_rx` doesn't deduplicate by Sequence Number.** Found
-      running `open_modem_station_sim.grc` for real, two separate
+      running `open_modem_station1_sim.grc`/`open_modem_station2_sim.grc`
+      for real, two separate
       processes over a PipeWire loopback: an ACK that arrives just after
       `open_modem_tx`'s 2s retry timeout causes a real retry, which the
       peer's `open_modem_rx` decodes and delivers to `pdu_out` a second
@@ -78,6 +79,30 @@ Companion to [REQUIREMENTS.md](REQUIREMENTS.md).
 
 ## Done (most recent first)
 
+- [x] **Replaced the single-line "Received" box with a scrolling
+      `text_log`** in both simulation flowgraphs, after the single-line
+      `QT GUI Message Edit Box` was found to overwrite each new message
+      rather than accumulate a log of them. No stock GNU Radio QT GUI
+      widget does multi-line scrolling text (confirmed: `ls
+      /usr/share/gnuradio/grc/blocks/ | grep -i qtgui` has only
+      single-line widgets) - built a new `text_log` block
+      (`python/open_modem/text_log.py`), a raw PyQt `QPlainTextEdit`
+      exposed via a `qwidget()` method matching the `gui_hint`-embedding
+      convention stock widgets use, with `QMetaObject.invokeMethod(...,
+      QueuedConnection, ...)` to append text safely from GNU Radio's
+      message-handling thread rather than the Qt GUI thread. Verified
+      headless (`QT_QPA_PLATFORM=offscreen`) that it appends rather than
+      replaces, and trims to `max_lines` (oldest first) - new
+      `qa_text_log.py`, all 8 QA test executables still pass. Also
+      discovered in passing: the two renamed example files
+      (`open_modem_station1_sim.grc`/`open_modem_station2_sim.grc`,
+      created via GRC's "Save As" from a now-deleted original) still
+      shared one internal GRC `id` (`open_modem_station_sim`) - harmless
+      until generated/compiled together, at which point one's `.py`
+      output would silently overwrite the other's. Gave each its own id
+      (`open_modem_station1_sim`/`open_modem_station2_sim`) and window
+      title; confirmed via `grcc` that they now generate distinct
+      `.py` files.
 - [x] **Added a Constellation Sink to `open_modem_station_sim.grc`**
       (same `symbols_out` -> `pdu_to_stream(dtype='complex')` ->
       `Throttle(9600/s)` -> `qtgui_const_sink_x` chain as

@@ -125,16 +125,22 @@ def publish_keyed_burst(samples, publish_audio, publish_ptt, sample_rate=audio.A
 def decode_burst(x, mode_id, fec_preset=None, port='mic'):
     """Audio samples -> dict: rms, peak, quality (0..1), snr_db, timing
     (sample index of the burst marker, or None), status ('no_burst',
-    'no_frame', a decode_frames() failure status, or 'ok'), header, payload."""
+    'no_frame', a decode_frames() failure status, or 'ok'), header, payload,
+    symbols (the demodulated complex symbols, post carrier/timing recovery -
+    normalized to a unit-energy constellation per openwave_audio.demodulate's
+    own docstring; present whenever demodulate() ran, i.e. even for a
+    low-quality/'no_burst' result, for a caller that wants to show a
+    constellation plot of what was actually received, garbage or not)."""
     mod, rate, gens, k, carrier = mode_params(mode_id, fec_preset, port)
     out = {'rms': float(x.std()) if len(x) else 0.0,
            'peak': float(np.abs(x).max()) if len(x) else 0.0,
            'quality': 0.0, 'snr_db': float('-inf'), 'status': 'no_burst',
-           'payload': None, 'header': None, 'timing': None}
+           'payload': None, 'header': None, 'timing': None, 'symbols': None}
     symbols, info = audio.demodulate(x, rate, carrier, MODULATORS[mod](link.AUDIO_MARKER),
                                       constellation=modem._CONSTELLATIONS[mod])
     out['quality'], out['snr_db'] = float(info['quality']), float(info['snr_db'])
     out['timing'] = info['timing']
+    out['symbols'] = symbols
     if info['quality'] < 0.15:
         return out
     n = 8 // BITS_PER_SYMBOL[mod]
@@ -151,12 +157,24 @@ def decode_burst(x, mode_id, fec_preset=None, port='mic'):
     return out
 
 
+def burst_length_symbols(mode_id, fec_preset, port, payload_len):
+    """Exact number of symbols (marker + FEC-coded header+payload+CRC) for a
+    frame whose payload is payload_len bytes - the real, signal-bearing
+    portion of decode_burst's returned 'symbols' array. demodulate() keeps
+    decision-directed tracking past this point to the end of whatever
+    buffer it was given (per its own docstring), so without this, a
+    constellation plot of the full array would be diluted by a long tail
+    of post-frame noise/silence."""
+    mod, _, gens, k, _ = mode_params(mode_id, fec_preset, port)
+    frame = audio.frame_for_audio(link.build_frame(bytes(payload_len), mode_id=mode_id))
+    return len(MODULATORS[mod](fec.encode_frame(frame, gens, k, marker=link.AUDIO_MARKER)))
+
+
 def burst_length_samples(mode_id, fec_preset, port, payload_len):
     """On-air length, in samples, of a frame whose payload is payload_len
     bytes - how far to trim a receive buffer past a decoded burst."""
-    mod, rate, gens, k, _ = mode_params(mode_id, fec_preset, port)
-    frame = audio.frame_for_audio(link.build_frame(bytes(payload_len), mode_id=mode_id))
-    return (len(MODULATORS[mod](fec.encode_frame(frame, gens, k, marker=link.AUDIO_MARKER)))
+    _, rate, _, _, _ = mode_params(mode_id, fec_preset, port)
+    return (burst_length_symbols(mode_id, fec_preset, port, payload_len)
             * audio.samples_per_symbol(rate))
 
 

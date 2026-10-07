@@ -19,6 +19,14 @@ user-prefix install), then run the generated `<file>.py`.
   fails outright even noise-free, since each mode modulates even its
   preamble differently - there's nothing for a mismatched RX to lock
   onto.)
+- **`open_modem_constellation.grc`** — the same noisy-channel loop, with
+  `open_modem_rx_0`'s actual demodulated symbols (post carrier/timing
+  recovery, truncated to the real frame) fed to a QT GUI Constellation
+  Sink via a live noise slider (not a CLI flag this time - drag it while
+  watching the plot). Tight clusters at the mode's ideal points means a
+  clean decode; a smeared ring or blob means you've found the cliff. The
+  visual counterpart to `apps/margin_sweep.py`'s numbers and
+  `open_modem_noisy_loopback.grc`'s console output.
 - **`open_modem_ht.grc`** — the live station: a real AIOC/Digirig over USB
   audio, autodetected via `radio_select`. Needs real hardware and a
   display; see the repo README/TODO.md for what's and isn't validated yet.

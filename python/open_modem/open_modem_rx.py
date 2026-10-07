@@ -36,6 +36,14 @@ Message ports
       a decoded frame is itself an ACK response (openwave_link.is_ack) -
       wire this to this station's own open_modem_tx's 'ack_received'
       input to resolve its RetryManager.
+  symbols_out (out): a PDU (empty dict, c32vector) of the demodulated
+      complex symbols for every burst dispatched - 'ok' or merely heard -
+      for a constellation display. Wire through a stock
+      `PDU to Tagged Stream` (type complex) to a QT GUI Constellation
+      Sink's stream input; symbol counts per burst are small enough
+      (hundreds to low thousands, not the audio-sample-rate counts
+      pdu_to_stream exists to work around - see that module's docstring)
+      that the stock block's own buffering is fine here.
 
 An ACK frame is never itself delivered on pdu_out, and a fragmented run's
 intermediate fragments produce no pdu_out message at all (status
@@ -79,6 +87,7 @@ class open_modem_rx(gr.sync_block):
         self.message_port_register_out(pmt.intern('pdu_out'))
         self.message_port_register_out(pmt.intern('ack_needed'))
         self.message_port_register_out(pmt.intern('ack_received'))
+        self.message_port_register_out(pmt.intern('symbols_out'))
         if sample_rate != SAMPLE_RATE:
             self.logger.warn(
                 f"open_modem_rx: sample_rate {sample_rate} given, but open_wave's PHY "
@@ -116,17 +125,34 @@ class open_modem_rx(gr.sync_block):
                 r = max(ok, key=lambda r: r['quality'])
                 length = _phy.burst_length_samples(r['mode'], self.fec_preset, self.port,
                                                     r['header']['payload_len'])
+                self._emit_symbols(r)
                 self._dispatch(r)
                 self._trim_to(self._base + r['timing'] + length + int(SETTLE_S * SAMPLE_RATE))
             elif heard:
                 r = max(heard, key=lambda r: r['quality'])
                 if self._end() - (self._base + r['timing']) < self.max_burst:
                     return  # the burst may still be arriving: wait for more audio
+                self._emit_symbols(r)
                 self._emit_heard(r)
                 self._trim_to(self._base + r['timing'] + int(0.5 * SAMPLE_RATE))
             else:
                 self._trim_to(self._end() - int(KEEP_S * SAMPLE_RATE))
                 return
+
+    def _emit_symbols(self, r):
+        symbols = r.get('symbols')
+        if symbols is None or len(symbols) == 0:
+            return
+        if r['status'] == 'ok':
+            # demodulate() keeps decision-directed tracking past the real
+            # frame to the end of whatever buffer it was given - truncate
+            # to just the marker+header+payload+CRC symbols so the plot
+            # isn't diluted by a long tail of post-frame noise/silence.
+            n = _phy.burst_length_symbols(r['mode'], self.fec_preset, self.port,
+                                           r['header']['payload_len'])
+            symbols = symbols[:n]
+        data = pmt.init_c32vector(len(symbols), [complex(s) for s in symbols])
+        self.message_port_pub(pmt.intern('symbols_out'), pmt.cons(pmt.make_dict(), data))
 
     def _dispatch(self, r):
         """A CRC-verified 'ok' frame: ACK response, fragment, or plain data."""

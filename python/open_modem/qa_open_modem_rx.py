@@ -59,6 +59,14 @@ class qa_open_modem_rx(gr_unittest.TestCase):
         self.assertEqual(meta['src_id'], 'K0MDT')
         self.assertEqual(payload, b'hello from K0MDT')
 
+        symbols_outs = [m for p, m in received if p == 'symbols_out']
+        self.assertEqual(len(symbols_outs), 1)  # one per burst, same as pdu_out here
+        symbols = numpy.array(pmt.c32vector_elements(pmt.cdr(symbols_outs[0])), dtype=numpy.complex64)
+        self.assertGreater(len(symbols), 0)
+        # a clean mode 1 (BPSK) decode's symbols should land near the unit
+        # circle's two real-axis points (+-1), not scattered randomly
+        self.assertGreater(numpy.mean(numpy.abs(symbols.real)), 0.5)
+
     def test_fragmented_message_only_delivers_once_complete(self):
         """Exercises TX fragmentation + decode + RX reassembly for real, via
         _dispatch() - not via feeding both fragments through one continuous

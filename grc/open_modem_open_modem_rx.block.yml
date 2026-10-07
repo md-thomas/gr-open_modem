@@ -44,5 +44,7 @@ outputs:
   domain: message
 - label: ack_received
   domain: message
+- label: symbols_out
+  domain: message
 
 file_format: 1

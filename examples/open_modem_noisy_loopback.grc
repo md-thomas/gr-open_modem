@@ -61,7 +61,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1232, 784.0]
+    coordinate: [960, 608.0]
     rotation: 0
     state: enabled
 - name: analog_noise_source_x_0
@@ -81,7 +81,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1312, 184.0]
+    coordinate: [872, 184.0]
     rotation: 0
     state: enabled
 - name: blocks_add_xx_0
@@ -102,7 +102,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1528, 160.0]
+    coordinate: [1160, 168.0]
     rotation: 0
     state: enabled
 - name: blocks_message_debug_0
@@ -135,7 +135,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2376, 384.0]
+    coordinate: [1456, 464.0]
     rotation: 0
     state: enabled
 - name: blocks_message_debug_2
@@ -152,7 +152,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2408, 160.0]
+    coordinate: [1336, 288.0]
     rotation: 0
     state: enabled
 - name: blocks_message_strobe_0
@@ -174,6 +174,30 @@ blocks:
     coordinate: [48, 180]
     rotation: 0
     state: enabled
+- name: mode_id
+  id: parameter
+  parameters:
+    alias: ''
+    comment: The one Waveform Mode under test - open_modem_tx_0, open_modem_rx_0 and
+      ack_responder_0 all reference this single value instead of each carrying their
+      own, so changing mode here changes it everywhere at once. Found the hard way
+      - TX and RX used to be set independently, and a station only ever decodes its
+      own mode cleanly (even the preamble is modulated differently per mode, so a
+      mismatch fails outright, not just more often under noise). See open_modem_open_modem_tx's
+      own dropdown for what each number is (0-2 fit the mic port; 3-5 need the data
+      port).
+    hide: none
+    label: ''
+    short_id: m
+    type: intx
+    value: '3'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [360, 8.0]
+    rotation: 0
+    state: enabled
 - name: noise_sigma
   id: parameter
   parameters:
@@ -186,36 +210,12 @@ blocks:
     label: ''
     short_id: n
     type: eng_float
-    value: '0.3'
+    value: '0.9'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
     coordinate: [200, 8.0]
-    rotation: 0
-    state: enabled
-- name: mode_id
-  id: parameter
-  parameters:
-    alias: ''
-    comment: The one Waveform Mode under test - open_modem_tx_0, open_modem_rx_0
-      and ack_responder_0 all reference this single value instead of each carrying
-      their own, so changing mode here changes it everywhere at once. Found the hard
-      way - TX and RX used to be set independently, and a station only ever decodes
-      its own mode cleanly (even the preamble is modulated differently per mode, so
-      a mismatch fails outright, not just more often under noise). See
-      open_modem_open_modem_tx's own dropdown for what each number is (0-2 fit the
-      mic port; 3-5 need the data port).
-    hide: none
-    label: ''
-    short_id: m
-    type: intx
-    value: '1'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [360, 8.0]
     rotation: 0
     state: enabled
 - name: open_modem_rx_0
@@ -225,9 +225,8 @@ blocks:
     alias: ''
     comment: Wrapped in a list because open_modem_rx can try several candidate modes
       per burst in general - here it's a single-element list referencing the shared
-      mode_id parameter below, so it can never drift out of sync with
-      open_modem_tx_0/ack_responder_0 the way two independently-set values could (and
-      did).
+      mode_id parameter below, so it can never drift out of sync with open_modem_tx_0/ack_responder_0
+      the way two independently-set values could (and did).
     fec_preset: ''
     max_burst_s: '6.0'
     maxoutbuf: '0'
@@ -240,7 +239,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1056, 512.0]
+    coordinate: [712, 424.0]
     rotation: 180
     state: enabled
 - name: open_modem_tx_0
@@ -266,7 +265,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [360, 300.0]
+    coordinate: [184, 276.0]
     rotation: 0
     state: enabled
 - name: pdu_to_stream_0
@@ -283,7 +282,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1240, 80.0]
+    coordinate: [688, 40.0]
     rotation: 0
     state: enabled
 

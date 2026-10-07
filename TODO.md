@@ -63,6 +63,27 @@ Companion to [REQUIREMENTS.md](REQUIREMENTS.md).
 
 ## Done (most recent first)
 
+- [x] **Added a real constellation display** - `open_modem_rx` gained a
+      `symbols_out` message port (and `_phy.decode_burst` now returns the
+      demodulated `symbols`, a non-breaking additive change) publishing
+      the actual post-recovery complex symbols for every burst it
+      dispatches, truncated to the real frame length (new
+      `_phy.burst_length_symbols`, factored out of `burst_length_samples`)
+      so a plot isn't diluted by `demodulate()`'s long decision-directed
+      tracking tail past the frame's end into trailing silence/noise -
+      found via a QA test (`qa_open_modem_rx.py`) that initially asserted
+      too strict a threshold on the untruncated array and failed, which is
+      what surfaced the need for the truncation in the first place.
+      `examples/open_modem_constellation.grc` wires this through a stock
+      `PDU to Tagged Stream` (fine here - symbol counts per burst are
+      hundreds to low thousands, well under the buffer ceiling that's a
+      real problem for the much larger audio-sample-rate PDUs elsewhere in
+      this module) to a QT GUI Constellation Sink, with noise_sigma as a
+      live slider instead of a CLI flag. Verified end to end (not just
+      compiled): ran it headlessly (`QT_QPA_PLATFORM=offscreen`), spied on
+      `symbols_out`, confirmed real non-empty complex vectors (944 and 576
+      symbols for a data burst and its ACK) actually reached the point
+      where they'd be plotted.
 - [x] **Fixed a real footgun in `examples/open_modem_noisy_loopback.grc`**,
       found interactively (user editing it in GNU Radio Companion): each
       of `open_modem_tx_0`, `open_modem_rx_0`, and `ack_responder_0`

@@ -63,6 +63,37 @@ Companion to [REQUIREMENTS.md](REQUIREMENTS.md).
 
 ## Done (most recent first)
 
+- [x] **`margin_sweep.py` gained a `--level` flag** (default 0.5, unchanged
+      - matches `audio_margin_sweep.py`'s own hardcoded convention),
+      after a user's live reading didn't match a cliff table quoted in
+      conversation: mode 2 at `sigma 0.9` was still decoding (SNR ~5 dB,
+      quality 0.88), where the table said that sigma should read ~1.3 dB
+      and fail outright. Root cause: that table was measured with
+      `level=0.5` (the script's hardcoded default, inherited from
+      `audio_margin_sweep.py`), but `open_modem_tx_0` in both
+      `open_modem_noisy_loopback.grc` and `open_modem_constellation.grc`
+      uses `tx_level=0.7` - a stronger burst against the same noise sigma
+      reads a higher effective SNR, so the table was simply measured
+      against the wrong signal level for those flowgraphs, not wrong
+      about the decoder's own behavior. Re-measured mode 2 (`r1_2_k7`,
+      40 trials) at the matching `level=0.7`:
+
+      | sigma | SNR | delivered |
+      |---|---|---|
+      | 0.5 | 9.5 dB | 100% |
+      | 0.7 | 6.6 dB | 100% |
+      | 0.9 | 4.5 dB | 82.5% |
+      | 1.1 | 2.4 dB | 12.5% |
+      | 1.3 | 1.1 dB | 0% |
+
+      matching the live reading (sigma 0.9 -> ~4.5 dB mean, individual
+      bursts scattering above/below that, including readings over 5 dB)
+      and shifting mode 2's real cliff for these flowgraphs to roughly
+      `sigma` 1.0-1.1, not 0.7-0.9. Any `--level`-less `margin_sweep.py`
+      comparison against a flowgraph must match that flowgraph's own
+      `tx_level`, or the numbers aren't comparable - the two aren't
+      interchangeable just because both are "noise standard deviation
+      against a burst."
 - [x] **Fixed two real bugs in `open_modem_constellation.grc`, found
       interactively** (user: "symbols stopped plotting... lowering sigma
       doesn't fix it"):

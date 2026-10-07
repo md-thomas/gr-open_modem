@@ -46,17 +46,23 @@ def main():
                    help='noise rms added to the audio (burst peak is 0.5)')
     p.add_argument('--trials', type=int, default=24)
     p.add_argument('--seed', type=int, default=7)
+    p.add_argument('--level', type=float, default=0.5,
+                   help="burst peak amplitude (default 0.5, matching open_wave's own "
+                        "audio_margin_sweep.py - a GRC flowgraph's open_modem_tx tx_level "
+                        "may differ, e.g. 0.7, which changes the effective SNR at a given "
+                        "sigma and makes this default the wrong comparison for it)")
     args = p.parse_args()
 
     rng = np.random.default_rng(args.seed)
     payload = args.text.encode()
     for mode in args.modes:
-        print(f"--- mode {mode} {args.fec}")
+        print(f"--- mode {mode} {args.fec} level {args.level}")
         for sigma in args.sigmas:
             delivered, rx_would_accept, snrs = 0, 0, []
             for _ in range(args.trials):
                 s = _phy.build_burst(payload, mode, src_id='K0MDT', dst_id='ALL',
-                                      fec_preset=args.fec, port=args.port, level=0.5, lead_in_s=0.5)
+                                      fec_preset=args.fec, port=args.port, level=args.level,
+                                      lead_in_s=0.5)
                 x = np.concatenate([np.zeros(48000), s, np.zeros(48000)])
                 noisy = (x + rng.normal(0, sigma, len(x))).astype(np.float32)
                 r = _phy.decode_burst(noisy, mode, args.fec, args.port)

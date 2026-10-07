@@ -81,7 +81,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [872, 608.0]
+    coordinate: [840, 600.0]
     rotation: 0
     state: enabled
 - name: analog_noise_source_x_0
@@ -186,6 +186,33 @@ blocks:
     coordinate: [48, 248.0]
     rotation: 0
     state: enabled
+- name: blocks_throttle2_0
+  id: blocks_throttle2
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Required here, not optional - pdu_to_tagged_stream_0 has no real source/sink
+      pacing it (nothing like real-time audio hardware governs this symbol-rate stream),
+      so with nothing downstream to rate-limit it, it free-runs as fast as the CPU
+      allows between bursts, filling with idle zeros - confirmed live, 168 MILLION
+      samples in 5 seconds, unthrottled. blocks.throttle's own docstring says exactly
+      this - "should only be used in GUI apps where there is no other rate limiting
+      block" - precisely this flowgraph.
+    ignoretag: 'True'
+    limit: auto
+    maximum: '0.1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samples_per_second: '9600'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1392, 648.0]
+    rotation: 0
+    state: enabled
 - name: mode_id
   id: parameter
   parameters:
@@ -225,7 +252,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [824, 408.0]
+    coordinate: [872, 400.0]
     rotation: 180
     state: enabled
 - name: open_modem_tx_0
@@ -251,7 +278,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [280, 276.0]
+    coordinate: [328, 284.0]
     rotation: 0
     state: enabled
 - name: pdu_to_stream_0
@@ -264,6 +291,7 @@ blocks:
       comment for why not the stock PDU to Tagged Stream block (that limitation is
       specific to the much larger audio-sample-rate stream, not the much smaller symbol-rate
       one below, which uses that stock block fine).
+    dtype: float
     maxoutbuf: '0'
     minoutbuf: '0'
   states:
@@ -285,8 +313,8 @@ blocks:
       for the audio-sample-rate case) once enough bursts queue up, and its thread
       dies permanently when it does, which looked like "the plot stopped updating
       and the noise slider doesn't fix it" - because it doesn't; the block feeding
-      it is dead. This block drains incrementally instead, so it can't hit that
-      ceiling at all.
+      it is dead. This block drains incrementally instead, so it can't hit that ceiling
+      at all.
     dtype: complex
     maxoutbuf: '0'
     minoutbuf: '0'
@@ -295,33 +323,6 @@ blocks:
     bus_source: false
     bus_structure: null
     coordinate: [1432, 528.0]
-    rotation: 0
-    state: enabled
-- name: blocks_throttle2_0
-  id: blocks_throttle2
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: Required here, not optional - pdu_to_tagged_stream_0 has no real
-      source/sink pacing it (nothing like real-time audio hardware governs this
-      symbol-rate stream), so with nothing downstream to rate-limit it, it free-runs
-      as fast as the CPU allows between bursts, filling with idle zeros - confirmed
-      live, 168 MILLION samples in 5 seconds, unthrottled. blocks.throttle's own
-      docstring says exactly this - "should only be used in GUI apps where there is
-      no other rate limiting block" - precisely this flowgraph.
-    ignoretag: 'True'
-    limit: auto
-    maximum: '0.1'
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    samples_per_second: '9600'
-    type: complex
-    vlen: '1'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1432, 624.0]
     rotation: 0
     state: enabled
 - name: qtgui_const_sink_x_0
@@ -415,7 +416,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1616, 632.0]
+    coordinate: [1632, 640.0]
     rotation: 0
     state: enabled
 
@@ -425,6 +426,7 @@ connections:
 - [analog_noise_source_x_0, '0', blocks_add_xx_0, '1']
 - [blocks_add_xx_0, '0', open_modem_rx_0, '0']
 - [blocks_message_strobe_0, strobe, open_modem_tx_0, pdu_in]
+- [blocks_throttle2_0, '0', qtgui_const_sink_x_0, '0']
 - [open_modem_rx_0, ack_needed, ack_responder_0, ack_needed]
 - [open_modem_rx_0, ack_received, open_modem_tx_0, ack_received]
 - [open_modem_rx_0, pdu_out, blocks_message_debug_0, print]
@@ -433,7 +435,6 @@ connections:
 - [open_modem_tx_0, delivery_failed, blocks_message_debug_2, print]
 - [open_modem_tx_0, ptt, blocks_message_debug_1, print]
 - [pdu_to_stream_0, '0', blocks_add_xx_0, '0']
-- [blocks_throttle2_0, '0', qtgui_const_sink_x_0, '0']
 - [pdu_to_tagged_stream_0, '0', blocks_throttle2_0, '0']
 
 metadata:

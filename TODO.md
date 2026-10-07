@@ -63,6 +63,20 @@ Companion to [REQUIREMENTS.md](REQUIREMENTS.md).
 
 ## Done (most recent first)
 
+- [x] **Added `examples/open_modem_noisy_loopback.grc`** - the live,
+      GNU-Radio-native counterpart to `apps/margin_sweep.py`'s offline
+      noise sweep: the same TX/RX/ACK loop as `open_modem_loopback.grc`,
+      with `analog.noise_source_f` + `blocks.add_ff` injecting Gaussian
+      noise into the channel (not the stock `channels_channel_model`,
+      complex-only and the wrong fit for this real-valued audio PHY).
+      Noise level is a real CLI parameter (`--noise-sigma`/`-n`), not
+      hardcoded. Verified at both ends: `--noise-sigma 0.1` decodes
+      cleanly (SNR ~22-23 dB, status ok); `--noise-sigma 1.5` produces
+      consistent `crc_fail` (SNR near 0 dB, every burst heard but
+      corrupted) with visible retries, matching mode 1's measured cliff
+      region from the margin-sweep entry below. Added `examples/README.md`
+      (replacing `gr_modtool`'s placeholder `examples/README`) describing
+      all three example flowgraphs.
 - [x] **Noise-margin sweep, reproducing open_wave's own
       `audio_margin_sweep.py` against `_phy.py`** (the exact code
       `open_modem_tx`/`open_modem_rx` call - no DSP of their own around

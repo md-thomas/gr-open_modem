@@ -109,6 +109,18 @@ instead (one pair for the data burst, one for the ACK responding to it),
 and the ACK loop closes within the same process - no `delivery_failed`
 message should ever appear here.
 
+`open_modem_noisy_loopback.grc` is the same loop with an adjustable noisy
+channel in between (a real GRC block chain - `analog.noise_source_f` +
+`blocks.add_ff`, not the stock complex-only `channels_channel_model`):
+
+```
+python3 open_modem_noisy_loopback.py --noise-sigma 0.1   # mild - clean decodes
+python3 open_modem_noisy_loopback.py --noise-sigma 1.5   # heavy - crc_fail, retries, eventual delivery_failed
+```
+
+the live, GNU-Radio-native counterpart to `apps/margin_sweep.py`'s offline
+noise sweep - see `examples/README.md` for what to expect at each level.
+
 `open_modem_ht.grc` needs a real AIOC or Digirig attached (it autodetects
 via `radio_select`, failing loudly at startup if it finds none or more than
 one - name which with `--radio aioc`/`--radio digirig`) and a display (it's

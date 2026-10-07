@@ -63,6 +63,22 @@ Companion to [REQUIREMENTS.md](REQUIREMENTS.md).
 
 ## Done (most recent first)
 
+- [x] **Fixed a real footgun in `examples/open_modem_noisy_loopback.grc`**,
+      found interactively (user editing it in GNU Radio Companion): each
+      of `open_modem_tx_0`, `open_modem_rx_0`, and `ack_responder_0`
+      carried its own independent `mode_id`/`mode_ids` value, with no
+      link between them. Changing TX's mode (to try a different Waveform
+      Mode) without also updating RX's silently breaks delivery
+      completely - not "worse under noise," totally broken even
+      noise-free, confirmed directly: feeding a mode-2 burst to
+      `_phy.decode_burst` with `mode_id=1` at zero added noise gave
+      quality 0.23 (below the 0.4 threshold) - each mode modulates even
+      its preamble differently, so a mismatched RX has nothing to
+      correlate against. Fixed by adding one shared `mode_id` Parameter
+      (`--mode-id`/`-m`) that all three blocks now reference instead of
+      each carrying a literal - confirmed the generated code passes the
+      same `mode_id` variable to all three constructors, and re-verified
+      mode 2 end to end (`status: ok`, correct payload, both messages).
 - [x] **Added `examples/open_modem_noisy_loopback.grc`** - the live,
       GNU-Radio-native counterpart to `apps/margin_sweep.py`'s offline
       noise sweep: the same TX/RX/ACK loop as `open_modem_loopback.grc`,
